@@ -55,7 +55,7 @@ class HomePage extends StatelessWidget {
         ],
         title: Obx(() => Text('首页${homeLogic.pageIndex}')),
       ),
-      drawer: SyncDrawer(),
+      drawer: const SyncDrawer(),
       body: Column(
         children: [Text('本地文件目录${homeLogic.pageIndex}')],
       ),
