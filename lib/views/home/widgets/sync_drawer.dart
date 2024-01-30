@@ -4,8 +4,35 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/views/home/home_page.dart';
 
+class AccountInfo {
+  String name;
+  IconData icon;
+  IconData selectedIcon;
+
+  AccountInfo(
+      {required this.name, this.icon = Icons.account_circle_outlined, this.selectedIcon = Icons.account_circle});
+}
+
+class SyncInfo {
+  String name;
+  IconData icon;
+  IconData selectedIcon;
+
+  SyncInfo({required this.name, this.icon = Icons.cloud_sync_outlined, this.selectedIcon = Icons.cloud_sync});
+}
+
 class SyncDrawer extends StatelessWidget {
-  const SyncDrawer({super.key});
+  SyncDrawer({super.key});
+
+  final accountList = [
+    AccountInfo(name: 'SMB', icon: Icons.lan_outlined, selectedIcon: Icons.lan),
+    AccountInfo(name: 'WebDAV', icon: Icons.cloud_outlined, selectedIcon: Icons.cloud),
+  ];
+
+  final syncList = [
+    SyncInfo(name: '相册同步', icon: Icons.image_outlined, selectedIcon: Icons.image),
+    SyncInfo(name: '视频同步', icon: Icons.video_file_outlined, selectedIcon: Icons.video_file),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -16,54 +43,69 @@ class SyncDrawer extends StatelessWidget {
                 log('选择了：$value');
                 homeLogic.changePage(value);
               },
-              // indicatorColor: Colors.transparent,
-              // indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
               selectedIndex: homeLogic.pageIndex.value,
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(30, 30, 30, 15),
-                  child: Text('账号'),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(30, 30, 30, 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('账户'),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline),
+                        onPressed: () {
+                          // 去添加存储账户
+                          log('添加存储账户');
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                NavigationDrawerDestination(
+                const NavigationDrawerDestination(
                   icon: Icon(Icons.folder_outlined),
-                  label: Text('本地存储'),
+                  label: Text(
+                    '本地存储',
+                    style: TextStyle(fontSize: 16),
+                  ),
                   selectedIcon: Icon(Icons.folder),
                   backgroundColor: Colors.redAccent,
                 ),
-                NavigationDrawerDestination(
-                  icon: Icon(Icons.lan_outlined),
-                  label: Text('SMB'),
-                  selectedIcon: Icon(Icons.lan),
+                ...accountList
+                    .map((account) => NavigationDrawerDestination(
+                          icon: Icon(account.icon),
+                          label: Text(
+                            account.name,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          selectedIcon: Icon(account.selectedIcon),
+                        ))
+                    .toList(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(30, 15, 30, 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('同步'),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline),
+                        onPressed: () {
+                          // 创建同步
+                          log('创建同步');
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                NavigationDrawerDestination(
-                  icon: Icon(Icons.cloud_outlined),
-                  label: Text('WEBDAV'),
-                  selectedIcon: Icon(Icons.cloud),
-                ),
-                Divider(
-                  indent: 15,
-                  endIndent: 15,
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                  child: Text('同步'),
-                ),
-                NavigationDrawerDestination(
-                  icon: Icon(Icons.photo_camera_back_outlined),
-                  label: Text('相册同步'),
-                  selectedIcon: Icon(Icons.photo_camera_back),
-                  backgroundColor: Colors.redAccent,
-                ),
-                NavigationDrawerDestination(
-                  icon: Icon(Icons.lan_outlined),
-                  label: Text('本地同步'),
-                  selectedIcon: Icon(Icons.lan),
-                ),
-                NavigationDrawerDestination(
-                  icon: Icon(Icons.video_collection_outlined),
-                  label: Text('视频同步'),
-                  selectedIcon: Icon(Icons.video_collection),
-                ),
+                ...syncList
+                    .map((sync) => NavigationDrawerDestination(
+                          icon: Icon(sync.icon),
+                          label: Text(
+                            sync.name,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          selectedIcon: Icon(sync.selectedIcon),
+                        ))
+                    .toList(),
               ],
             ));
   }
