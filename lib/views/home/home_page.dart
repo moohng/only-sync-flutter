@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:only_sync_flutter/routes/route.dart';
 import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
 
 class HomeLogic extends GetxController {
@@ -22,34 +23,31 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              log('搜索');
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.search),
+          //   onPressed: () {
+          //     log('搜索');
+          //   },
+          // ),
           PopupMenuButton(
             icon: const Icon(Icons.more_vert),
             itemBuilder: (context) => const [
               PopupMenuItem(
                 value: 0,
-                child: Text('同步'),
+                child: Text('添加账户'),
               ),
               PopupMenuItem(
                 value: 1,
-                child: Text('扫一扫'),
-              ),
-              PopupMenuItem(
-                value: 2,
-                child: Text('添加'),
-              ),
-              PopupMenuItem(
-                value: 3,
-                child: Text('删除'),
+                child: Text('新建同步'),
               ),
             ],
             onSelected: (value) {
               log('选择了：$value');
+              if (value == 0) {
+                Get.toNamed(Routes.addAccountPage);
+              } else if (value == 1) {
+                Get.toNamed(Routes.addSyncPage);
+              }
             },
           )
         ],
