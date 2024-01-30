@@ -5,31 +5,31 @@ import 'package:get/get.dart';
 import 'package:only_sync_flutter/views/home/home_page.dart';
 
 class AccountInfo {
-  String name;
-  IconData icon;
-  IconData selectedIcon;
-
-  AccountInfo(
+  const AccountInfo(
       {required this.name, this.icon = Icons.account_circle_outlined, this.selectedIcon = Icons.account_circle});
+
+  final String name;
+  final IconData icon;
+  final IconData selectedIcon;
 }
 
 class SyncInfo {
-  String name;
-  IconData icon;
-  IconData selectedIcon;
+  const SyncInfo({required this.name, this.icon = Icons.cloud_sync_outlined, this.selectedIcon = Icons.cloud_sync});
 
-  SyncInfo({required this.name, this.icon = Icons.cloud_sync_outlined, this.selectedIcon = Icons.cloud_sync});
+  final String name;
+  final IconData icon;
+  final IconData selectedIcon;
 }
 
 class SyncDrawer extends StatelessWidget {
-  SyncDrawer({super.key});
+  const SyncDrawer({super.key});
 
-  final accountList = [
+  final accountList = const [
     AccountInfo(name: 'SMB', icon: Icons.lan_outlined, selectedIcon: Icons.lan),
     AccountInfo(name: 'WebDAV', icon: Icons.cloud_outlined, selectedIcon: Icons.cloud),
   ];
 
-  final syncList = [
+  final syncList = const [
     SyncInfo(name: '相册同步', icon: Icons.image_outlined, selectedIcon: Icons.image),
     SyncInfo(name: '视频同步', icon: Icons.video_file_outlined, selectedIcon: Icons.video_file),
   ];
@@ -45,8 +45,17 @@ class SyncDrawer extends StatelessWidget {
               },
               selectedIndex: homeLogic.pageIndex.value,
               children: [
+                const DrawerHeader(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Only Sync',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(30, 30, 30, 4),
+                  padding: const EdgeInsets.fromLTRB(30, 15, 30, 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

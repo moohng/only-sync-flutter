@@ -22,19 +22,40 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         actions: [
-          Builder(builder: (context) {
-            return IconButton(
-              icon: Icon(Icons.menu_open),
-              onPressed: () {
-                log('hello');
-                Scaffold.of(context).openEndDrawer();
-              },
-            );
-          }),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              log('搜索');
+            },
+          ),
+          PopupMenuButton(
+            icon: const Icon(Icons.more_vert),
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 0,
+                child: Text('同步'),
+              ),
+              PopupMenuItem(
+                value: 1,
+                child: Text('扫一扫'),
+              ),
+              PopupMenuItem(
+                value: 2,
+                child: Text('添加'),
+              ),
+              PopupMenuItem(
+                value: 3,
+                child: Text('删除'),
+              ),
+            ],
+            onSelected: (value) {
+              log('选择了：$value');
+            },
+          )
         ],
         title: Obx(() => Text('首页${homeLogic.pageIndex}')),
       ),
-      endDrawer: SyncDrawer(),
+      drawer: SyncDrawer(),
       body: Column(
         children: [Text('本地文件目录${homeLogic.pageIndex}')],
       ),
