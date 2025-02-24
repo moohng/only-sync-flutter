@@ -4,12 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/routes/route.dart';
 import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
+import 'package:only_sync_flutter/views/home/widgets/media_grid.dart';
 
 class HomeLogic extends GetxController {
   var pageIndex = 0.obs;
+  var hasRemoteConfig = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    checkRemoteConfig();
+  }
 
   void changePage(int index) {
     pageIndex.value = index;
+  }
+
+  Future<void> checkRemoteConfig() async {
+    // TODO: 实现检查远程服务配置的逻辑
+    hasRemoteConfig.value = false;
   }
 }
 
@@ -20,15 +33,56 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final homeLogic = Get.put(HomeLogic());
 
+    return Obx(() => homeLogic.hasRemoteConfig.value
+        ? _buildMainScaffold(homeLogic)
+        : _buildGuideScaffold());
+  }
+
+  Widget _buildGuideScaffold() {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.cloud_off_outlined,
+              size: 64,
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '未配置远程服务',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '请先添加一个远程服务账户，开始使用同步功能',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => Get.toNamed(Routes.addAccountPage),
+              icon: const Icon(Icons.add),
+              label: const Text('添加账户'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainScaffold(HomeLogic homeLogic) {
     return Scaffold(
       appBar: AppBar(
         actions: [
-          // IconButton(
-          //   icon: const Icon(Icons.search),
-          //   onPressed: () {
-          //     log('搜索');
-          //   },
-          // ),
+          IconButton(
+            icon: const Icon(Icons.sync),
+            onPressed: () {
+              // 全部同步
+              final controller = Get.find<MediaGridController>();
+              controller.syncAll();
+            },
+          ),
           PopupMenuButton(
             icon: const Icon(Icons.more_vert),
             itemBuilder: (context) => const [
@@ -51,12 +105,10 @@ class HomePage extends StatelessWidget {
             },
           )
         ],
-        title: Obx(() => Text('首页${homeLogic.pageIndex}')),
+        title: const Text('媒体同步'),
       ),
       drawer: const SyncDrawer(),
-      body: Column(
-        children: [Text('本地文件目录${homeLogic.pageIndex}')],
-      ),
+      body: const MediaGrid(),
     );
   }
 }
