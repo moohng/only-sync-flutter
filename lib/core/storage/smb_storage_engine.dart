@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:get/get_connect/http/src/request/request.dart';
 import 'package:smb_connect/smb_connect.dart';
 import 'package:path/path.dart' as path;
 import 'package:only_sync_flutter/core/storage/storage_engine.dart';
@@ -12,7 +13,7 @@ class SMBStorageEngine implements StorageEngine {
   final String? username;
   final String? password;
   final String? domain;
-  late final SmbConnect _client;
+  late final SmbConnect _connect;
   static const int maxRetries = 3;
   static const Duration retryDelay = Duration(seconds: 1);
 
@@ -29,7 +30,7 @@ class SMBStorageEngine implements StorageEngine {
   Future<void> connect() async {
     for (int i = 0; i < maxRetries; i++) {
       try {
-        _client = await SmbConnect.connectAuth(
+        _connect = await SmbConnect.connectAuth(
           host: host,
           domain: domain ?? '',
           username: username ?? 'guest',
@@ -47,7 +48,7 @@ class SMBStorageEngine implements StorageEngine {
 
   @override
   Future<void> disconnect() async {
-    await _client.close();
+    await _connect.close();
   }
 
   @override
@@ -60,8 +61,12 @@ class SMBStorageEngine implements StorageEngine {
           await createDirectory(parentDir);
         }
 
+        final smbFile = await _connect.createFile(normalizedPath);
+        final writer = await _connect.openWrite(smbFile);
         final fileStream = file.openRead();
-        await _client.writeFile(normalizedPath, fileStream);
+        writer.addStream(fileStream);
+        await writer.flush();
+        await writer.close();
         return;
       } catch (e) {
         if (i == maxRetries - 1) {
@@ -81,8 +86,9 @@ class SMBStorageEngine implements StorageEngine {
         final parentDir = path.dirname(localPath);
         await Directory(parentDir).create(recursive: true);
 
-        final stream = await _client.readFile(normalizedPath);
-        await file.writeAsBytes(await stream.toBytes());
+        final smbFile = await _connect.file(normalizedPath);
+        final reader = await _connect.openRead(smbFile);
+        await file.writeAsString(await reader.bytesToString());
         return file;
       } catch (e) {
         if (i == maxRetries - 1) {
@@ -98,8 +104,8 @@ class SMBStorageEngine implements StorageEngine {
   Future<bool> exists(String remotePath) async {
     try {
       final normalizedPath = path.normalize(remotePath).replaceAll('\\', '/');
-      final info = await _client.getFileInformation(normalizedPath);
-      return info != null;
+      final file = await _connect.file(normalizedPath);
+      return file.isExists;
     } catch (e) {
       return false;
     }
@@ -107,30 +113,32 @@ class SMBStorageEngine implements StorageEngine {
 
   @override
   Future<List<StorageItem>> listDirectory(String remotePath) async {
+    final items = <StorageItem>[];
     for (int i = 0; i < maxRetries; i++) {
       try {
         final normalizedPath = path.normalize(remotePath).replaceAll('\\', '/');
-        final items = <StorageItem>[];
-        final entries = await _client.listDirectory(normalizedPath);
+        final folder = await _connect.file(normalizedPath);
+        final entries = await _connect.listFiles(folder);
 
-      for (final entry in entries) {
-        if (entry.filename == '.' || entry.filename == '..') continue;
+        for (final entry in entries) {
+          if (!entry.isExists) continue;
 
-        items.add(StorageItem(
-          path: path.join(remotePath, entry.filename),
-          info: StorageItemInfo(
-            name: entry.filename,
-            type: entry.isDirectory ? StorageItemType.directory : StorageItemType.file,
-            size: entry.endOfFile,
-            modifiedTime: entry.lastWriteTime,
-          ),
-        ));
+          items.add(StorageItem(
+            path: path.join(remotePath, entry.name),
+            info: StorageItemInfo(
+              name: entry.name,
+              type: entry.isDirectory() ? StorageItemType.directory : StorageItemType.file,
+              size: entry.size,
+              modifiedTime: DateTime.fromMillisecondsSinceEpoch(entry.lastModified),
+            ),
+          ));
+        }
+        break;
+      } catch (e) {
+        throw Exception('获取目录列表失败：$e');
       }
-
-      return items;
-    } catch (e) {
-      throw Exception('获取目录列表失败：$e');
     }
+    return items;
   }
 
   @override
@@ -142,7 +150,7 @@ class SMBStorageEngine implements StorageEngine {
         if (parentDir != '.' && !await exists(parentDir)) {
           await createDirectory(parentDir);
         }
-        await _client.createDirectory(normalizedPath);
+        await _connect.createFolder(normalizedPath);
         return;
       } catch (e) {
         if (i == maxRetries - 1) {
@@ -158,18 +166,7 @@ class SMBStorageEngine implements StorageEngine {
     for (int i = 0; i < maxRetries; i++) {
       try {
         final normalizedPath = path.normalize(remotePath).replaceAll('\\', '/');
-        final info = await _client.getFileInformation(normalizedPath);
-        if (info == null) return;
-
-        if (info.isDirectory) {
-          final items = await listDirectory(normalizedPath);
-          for (final item in items) {
-            await delete(item.path);
-          }
-          await _client.deleteDirectory(normalizedPath);
-        } else {
-          await _client.deleteFile(normalizedPath);
-        }
+        await _connect.delete(await _connect.file(normalizedPath));
         return;
       } catch (e) {
         if (i == maxRetries - 1) {
@@ -185,16 +182,16 @@ class SMBStorageEngine implements StorageEngine {
     for (int i = 0; i < maxRetries; i++) {
       try {
         final normalizedPath = path.normalize(remotePath).replaceAll('\\', '/');
-        final info = await _client.getFileInformation(normalizedPath);
-        if (info == null) {
+        final info = await _connect.file(normalizedPath);
+        if (!info.isExists) {
           throw Exception('文件不存在');
         }
 
         return StorageItemInfo(
           name: path.basename(normalizedPath),
-          type: info.isDirectory ? StorageItemType.directory : StorageItemType.file,
-          size: info.endOfFile,
-          modifiedTime: info.lastWriteTime,
+          type: info.isDirectory() ? StorageItemType.directory : StorageItemType.file,
+          size: info.size,
+          modifiedTime: DateTime.fromMillisecondsSinceEpoch(info.lastModified),
         );
       } catch (e) {
         if (i == maxRetries - 1) {
