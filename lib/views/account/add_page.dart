@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/storage/storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddAccountLogic extends GetxController {
   final selectedType = 'SMB'.obs;
@@ -79,6 +81,26 @@ class AddAccountLogic extends GetxController {
     //         password: password,
     //         path: path,
     //       );
+  }
+
+  @override
+  void onInit() async {
+    final prefs = await SharedPreferences.getInstance();
+    final accounts = prefs.getStringList('accounts') ?? [];
+    try {
+      // 转换为Map<String, dynamic>
+      Map<String, dynamic> account = jsonDecode(accounts.last);
+      selectedType.value = account['type'] ?? selectedType.value;
+      nameController.text = account['name'] ?? '';
+      hostController.text = account['host'] ?? '';
+      portController.text = account['port'].toString() ?? '';
+      usernameController.text = account['username'] ?? '';
+      passwordController.text = account['password'] ?? '';
+      pathController.text = account['path'] ?? '';
+    } catch(e) {
+      //
+    }
+    super.onInit();
   }
 
   @override
