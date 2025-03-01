@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:only_sync_flutter/routes/route.dart';
 import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
 import 'package:only_sync_flutter/views/home/widgets/media_grid.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeLogic extends GetxController {
   var pageIndex = 0.obs;
@@ -21,8 +22,9 @@ class HomeLogic extends GetxController {
   }
 
   Future<void> checkRemoteConfig() async {
-    // TODO: 实现检查远程服务配置的逻辑
-    hasRemoteConfig.value = false;
+    final prefs = await SharedPreferences.getInstance();
+    final accounts = prefs.getStringList('accounts') ?? [];
+    hasRemoteConfig.value = accounts.isNotEmpty;
   }
 }
 
@@ -33,9 +35,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final homeLogic = Get.put(HomeLogic());
 
-    return Obx(() => homeLogic.hasRemoteConfig.value
-        ? _buildMainScaffold(homeLogic)
-        : _buildGuideScaffold());
+    return Obx(() => homeLogic.hasRemoteConfig.value ? _buildMainScaffold(homeLogic) : _buildGuideScaffold());
   }
 
   Widget _buildGuideScaffold() {

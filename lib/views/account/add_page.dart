@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -52,17 +51,15 @@ class AddAccountLogic extends GetxController {
   StorageService _createStorageService() {
     final name = nameController.text;
     final host = hostController.text;
-    final port = int.parse(portController.text);
+    // final port = int.parse(portController.text);
     final username = usernameController.text;
     final password = passwordController.text;
-    final path = pathController.text;
+    // final path = pathController.text;
     return WebDAVService(
       name: name,
-      host: host,
-      port: port,
+      url: host,
       username: username,
       password: password,
-      path: path,
     );
     // return selectedType.value == 'SMB'
     //     ? SMBService(
@@ -92,12 +89,12 @@ class AddAccountLogic extends GetxController {
       Map<String, dynamic> account = jsonDecode(accounts.last);
       selectedType.value = account['type'] ?? selectedType.value;
       nameController.text = account['name'] ?? '';
-      hostController.text = account['host'] ?? '';
-      portController.text = account['port'].toString() ?? '';
+      hostController.text = account['url'] ?? '';
+      portController.text = account['port'].toString();
       usernameController.text = account['username'] ?? '';
       passwordController.text = account['password'] ?? '';
       pathController.text = account['path'] ?? '';
-    } catch(e) {
+    } catch (e) {
       //
     }
     super.onInit();
@@ -202,15 +199,6 @@ class AddAccountPage extends StatelessWidget {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '请输入端口号';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return '请输入有效的端口号';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 24),
               const Text('认证信息', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

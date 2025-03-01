@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 // import 'package:only_sync_flutter/core/storage/smb_storage_engine.dart';
 import 'package:only_sync_flutter/core/storage/webdav_storage_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:webdav_client/webdav_client.dart';
 
 abstract class StorageService {
   Future<void> testConnection();
@@ -63,35 +63,22 @@ class SMBService extends StorageService {
 
 class WebDAVService extends StorageService {
   final String name;
-  final String host;
-  final int port;
+  final String url;
   final String username;
   final String password;
-  final String path;
 
   WebDAVService({
     required this.name,
-    required this.host,
-    required this.port,
+    required this.url,
     required this.username,
     required this.password,
-    required this.path,
   });
 
   @override
   Future<void> testConnection() async {
-    final protocol = port == 443 ? 'https' : 'http';
-    final url = '$protocol://$host:$port$path';
-
     try {
-      final client = HttpClient();
-      final request = await client.getUrl(Uri.parse(url));
-      request.headers.add('Authorization', 'Basic ${base64Encode(utf8.encode('$username:$password'))}');
-      final response = await request.close();
-
-      if (response.statusCode != 200) {
-        throw Exception('服务器返回错误：${response.statusCode}');
-      }
+      final client = newClient(url, user: username, password: password);
+      await client.ping();
     } catch (e) {
       throw Exception('WebDAV连接测试失败：$e');
     }
@@ -102,11 +89,9 @@ class WebDAVService extends StorageService {
     final account = {
       'type': 'WebDAV',
       'name': name,
-      'host': host,
-      'port': port,
+      'url': url,
       'username': username,
       'password': password,
-      'path': path,
     };
 
     final prefs = await SharedPreferences.getInstance();
