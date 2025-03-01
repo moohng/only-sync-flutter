@@ -135,8 +135,9 @@ class WebDAVService extends StorageService {
 
   Future<void> _createDirectory(String remotePath) async {
     try {
-      final files = await client.readDir(remotePath);
-      if (files.isEmpty) {
+      try {
+        await client.readDir(remotePath);
+      } catch (e) {
         await client.mkdirAll(remotePath);
       }
     } catch (e) {

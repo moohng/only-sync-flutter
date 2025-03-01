@@ -66,7 +66,7 @@ class MediaManager {
   String? _remoteBasePath;
   bool _hasPermission = false;
 
-  MediaManager({StorageService? storageService, String? remoteBasePath = '/media'})
+  MediaManager({StorageService? storageService, String? remoteBasePath = '/only_sync'})
       : _storageService = storageService,
         _remoteBasePath = remoteBasePath;
 
