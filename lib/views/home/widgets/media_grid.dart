@@ -263,35 +263,53 @@ class MediaGrid extends StatelessWidget {
         return const Center(child: CircularProgressIndicator());
       }
 
-      if (controller.mediaFiles.isEmpty && !controller.isFirstLoad.value) {
-        return const Center(child: Text('暂无媒体文件'));
-      }
-
       final grouped = controller.groupedMediaFiles;
 
+      // 添加一个额外的容器来确保有足够的滚动空间
       return Stack(
         children: [
           RefreshIndicator(
             onRefresh: controller.refresh,
-            child: CustomScrollView(
-              controller: scrollController,
-              slivers: [
-                ...grouped.entries.map((entry) => SliverMediaGroup(
-                      month: entry.key,
-                      files: entry.value,
-                      onTapItem: (index) => controller.showPreview(
-                        entry.value,
-                        index,
-                      ),
-                    )),
-                if (controller.hasMore.value && !controller.isFirstLoad.value)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(child: CircularProgressIndicator()),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  controller: scrollController,
+                  // 确保内容至少有一个屏幕高，这样才能下拉刷新
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
                     ),
+                    child: grouped.isEmpty && !controller.isFirstLoad.value
+                        ? const Center(child: Text('暂无媒体文件'))
+                        : CustomScrollView(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            slivers: [
+                              ...grouped.entries.map((entry) => SliverMediaGroup(
+                                    month: entry.key,
+                                    files: entry.value,
+                                    onTapItem: (index) => controller.showPreview(
+                                      entry.value,
+                                      index,
+                                    ),
+                                  )),
+                              if (controller.hasMore.value && !controller.isFirstLoad.value)
+                                const SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
+                                ),
+                              // 添加底部间距
+                              const SliverToBoxAdapter(
+                                child: SizedBox(height: 16),
+                              ),
+                            ],
+                          ),
                   ),
-              ],
+                );
+              },
             ),
           ),
         ],
