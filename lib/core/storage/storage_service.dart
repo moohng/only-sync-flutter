@@ -1,12 +1,14 @@
 import 'dart:convert';
-// import 'package:only_sync_flutter/core/storage/smb_storage_engine.dart';
+import 'dart:io';
 import 'package:only_sync_flutter/core/storage/webdav_storage_engine.dart';
+import 'package:webdav_client/webdav_client.dart' show newClient, Client;
+import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:webdav_client/webdav_client.dart';
 
 abstract class StorageService {
   Future<void> testConnection();
   Future<void> saveAccount();
+  Future<void> uploadFile(String localPath, String remotePath);
 }
 
 class SMBService extends StorageService {
@@ -59,6 +61,11 @@ class SMBService extends StorageService {
     accounts.add(jsonEncode(account));
     await prefs.setStringList('accounts', accounts);
   }
+
+  @override
+  Future<void> uploadFile(String localPath, String remotePath) async {
+    // Implement SMB file upload logic here
+  }
 }
 
 class WebDAVService extends StorageService {
@@ -66,21 +73,28 @@ class WebDAVService extends StorageService {
   final String url;
   final String username;
   final String password;
+  late final Client client;
 
   WebDAVService({
     required this.name,
     required this.url,
     required this.username,
     required this.password,
-  });
+  }) {
+    client = newClient(
+      url,
+      user: username,
+      password: password,
+      debug: true,
+    );
+  }
 
   @override
   Future<void> testConnection() async {
     try {
-      final client = newClient(url, user: username, password: password);
       await client.ping();
     } catch (e) {
-      throw Exception('WebDAV连接测试失败：$e');
+      throw Exception('连接失败: $e');
     }
   }
 
@@ -98,5 +112,35 @@ class WebDAVService extends StorageService {
     final accounts = prefs.getStringList('accounts') ?? [];
     accounts.add(jsonEncode(account));
     await prefs.setStringList('accounts', accounts);
+  }
+
+  @override
+  Future<void> uploadFile(String localPath, String remotePath) async {
+    // 判断文件是否存在
+    if (!File(localPath).existsSync()) {
+      throw Exception('文件不存在: $localPath');
+    }
+
+    try {
+      // 确保远程目录存在
+      final dir = path.dirname(remotePath);
+      await _createDirectory(dir);
+
+      // 上传文件
+      await client.writeFromFile(localPath, remotePath);
+    } catch (e) {
+      throw Exception('上传失败: $e');
+    }
+  }
+
+  Future<void> _createDirectory(String remotePath) async {
+    try {
+      final files = await client.readDir(remotePath);
+      if (files.isEmpty) {
+        await client.mkdirAll(remotePath);
+      }
+    } catch (e) {
+      throw Exception('创建目录失败: $e');
+    }
   }
 }

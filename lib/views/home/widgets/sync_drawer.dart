@@ -46,10 +46,21 @@ class SyncDrawerController extends GetxController {
   }
 
   Future<void> selectAccount(String url) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('activeAccount', url);
-    selectedAccountUrl.value = url;
-    Get.snackbar('成功', '已切换同步账户');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('activeAccount', url);
+      selectedAccountUrl.value = url;
+
+      // 找到对应的账户信息
+      final account = accounts.firstWhere((acc) => acc['url'] == url);
+      // 切换存储服务
+      await Get.find<HomeLogic>().switchStorageService(account);
+
+      Get.snackbar('成功', '已切换同步账户');
+    } catch (e) {
+      print('切换账户失败: $e');
+      Get.snackbar('错误', '切换账户失败：$e');
+    }
   }
 }
 

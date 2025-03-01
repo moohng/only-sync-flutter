@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
+import 'package:only_sync_flutter/core/storage/storage_service.dart';
 import 'package:only_sync_flutter/views/home/views/media_preview_page.dart';
 import 'package:intl/intl.dart';
 import 'package:only_sync_flutter/views/home/widgets/media_grid_item.dart';
@@ -27,6 +28,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   final isLoadingMore = false.obs;
   final isFirstLoad = true.obs;
   final isInitializing = true.obs;
+  final isServiceAvailable = true.obs;
 
   @override
   void onInit() {
@@ -43,6 +45,11 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   void onClose() {
     fadeController.dispose();
     super.onClose();
+  }
+
+  void updateStorageService(StorageService? service, {bool isAvailable = true}) {
+    _mediaManager.updateStorageService(service);
+    isServiceAvailable.value = isAvailable;
   }
 
   Future<void> _initMediaManager() async {
@@ -112,6 +119,16 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   }
 
   Future<void> syncFile(MediaFileInfo file) async {
+    if (!isServiceAvailable.value) {
+      Get.snackbar(
+        '同步失败',
+        '存储服务不可用，请检查网络连接或服务配置',
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+      return;
+    }
+
     final index = mediaFiles.indexWhere((f) => f.path == file.path);
     if (index == -1) return;
 
@@ -125,6 +142,16 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   }
 
   Future<void> syncAll() async {
+    if (!isServiceAvailable.value) {
+      Get.snackbar(
+        '同步失败',
+        '存储服务不可用，请检查网络连接或服务配置',
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+      return;
+    }
+
     final unsynced = mediaFiles.where((f) => f.syncStatus == SyncStatus.notSynced).toList();
     if (unsynced.isEmpty) return;
 

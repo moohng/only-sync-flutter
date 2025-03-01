@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'package:intl/intl.dart';
 import 'package:only_sync_flutter/core/storage/storage_engine.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:photo_manager/photo_manager.dart';
+import '../storage/storage_service.dart';
 
 /// 媒体文件类型
 enum MediaType { image, video }
@@ -60,13 +62,19 @@ class MediaFileInfo {
 
 /// 媒体管理器，负责扫描和管理本地媒体文件
 class MediaManager {
-  final StorageEngine? _storageEngine;
-  final String? _remoteBasePath;
+  StorageService? _storageService;
+  String? _remoteBasePath;
   bool _hasPermission = false;
 
-  MediaManager({StorageEngine? storageEngine, String? remoteBasePath})
-      : _storageEngine = storageEngine,
+  MediaManager({StorageService? storageService, String? remoteBasePath = '/media'})
+      : _storageService = storageService,
         _remoteBasePath = remoteBasePath;
+
+  // 添加更新存储服务的方法
+  void updateStorageService(StorageService? service, {String? remoteBasePath}) {
+    _storageService = service;
+    _remoteBasePath = remoteBasePath ?? '/media';
+  }
 
   /// 缩略图缓存目录
   late final Directory _thumbnailCacheDir;
@@ -230,16 +238,20 @@ class MediaManager {
 
   /// 同步单个文件
   Future<MediaFileInfo> syncFile(MediaFileInfo file) async {
-    if (_storageEngine == null || _remoteBasePath == null) {
+    if (_storageService == null || _remoteBasePath == null) {
       return file.copyWith(
         syncStatus: SyncStatus.failed,
-        syncError: '存储引擎未初始化',
+        syncError: '存储服务未初始化',
       );
     }
 
     try {
-      final remotePath = '$_remoteBasePath/${file.name}';
-      await _storageEngine!.uploadFile(File(file.path), remotePath);
+      // 创建按年月组织的远程路径
+      final dateStr = DateFormat('yyyy/MM').format(file.modifiedTime);
+      final remotePath = '$_remoteBasePath/$dateStr/${file.name}';
+
+      // 上传文件
+      await _storageService!.uploadFile(file.path, remotePath);
 
       return file.copyWith(
         syncStatus: SyncStatus.synced,
@@ -247,6 +259,7 @@ class MediaManager {
         remotePath: remotePath,
       );
     } catch (e) {
+      print('同步失败: $e');
       return file.copyWith(
         syncStatus: SyncStatus.failed,
         syncError: e.toString(),
