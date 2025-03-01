@@ -191,4 +191,31 @@ class WebDAVStorageEngine implements StorageEngine {
       modifiedTime: modified,
     );
   }
+
+  @override
+  String? id;
+
+  @override
+  // TODO: implement name
+  String get name => throw UnimplementedError();
+
+  @override
+  Future<void> saveAccount() {
+    // TODO: implement saveAccount
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> testConnection() {
+    // TODO: implement testConnection
+    throw UnimplementedError();
+  }
+
+  @override
+  // TODO: implement type
+  String get type => throw UnimplementedError();
+
+  @override
+  // TODO: implement url
+  String get url => throw UnimplementedError();
 }

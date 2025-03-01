@@ -35,44 +35,17 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final homeLogic = Get.put(HomeLogic());
 
-    return Obx(() => homeLogic.hasRemoteConfig.value ? _buildMainScaffold(homeLogic) : _buildGuideScaffold());
-  }
-
-  Widget _buildGuideScaffold() {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.cloud_off_outlined,
-              size: 64,
-              color: Colors.grey,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              '未配置远程服务',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '请先添加一个远程服务账户，开始使用同步功能',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () => Get.toNamed(Routes.addAccountPage),
-              icon: const Icon(Icons.add),
-              label: const Text('添加账户'),
-            ),
-          ],
-        ),
-      ),
+    return GetBuilder<SyncDrawerController>(
+      init: SyncDrawerController(),
+      builder: (drawerController) {
+        return _buildMainScaffold(homeLogic, drawerController);
+      },
     );
   }
 
-  Widget _buildMainScaffold(HomeLogic homeLogic) {
+  Widget _buildMainScaffold(HomeLogic homeLogic, SyncDrawerController drawerController) {
     return Scaffold(
+      key: Get.nestedKey(1), // 添加唯一的key
       appBar: AppBar(
         actions: [
           IconButton(

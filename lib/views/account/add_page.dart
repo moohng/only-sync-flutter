@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/storage/storage_service.dart';
+import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AddAccountLogic extends GetxController {
@@ -38,9 +39,30 @@ class AddAccountLogic extends GetxController {
     isLoading.value = true;
     try {
       final service = _createStorageService();
-      await service.saveAccount();
+      await service.testConnection();
+
+      // 保存账户信息
+      final prefs = await SharedPreferences.getInstance();
+      final accounts = prefs.getStringList('accounts') ?? [];
+
+      final accountMap = {
+        'type': 'WebDAV',
+        'name': nameController.text,
+        'url': hostController.text,
+        'username': usernameController.text,
+        'password': passwordController.text,
+        'path': pathController.text,
+      };
+
+      accounts.add(jsonEncode(accountMap));
+      await prefs.setStringList('accounts', accounts);
+
+      // 设置为当前活跃账户
+      await prefs.setString('activeAccount', hostController.text);
+
+      Get.find<SyncDrawerController>().loadAccounts();
       Get.back();
-      Get.snackbar('成功', '账户添加成功');
+      Get.snackbar('成功', '账户添加成功并已启用');
     } catch (e) {
       Get.snackbar('错误', '保存失败：$e');
     } finally {
@@ -134,37 +156,12 @@ class AddAccountPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('服务类型', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Obx(() => RadioListTile(
-                          title: const Text('SMB'),
-                          subtitle: const Text('适用于局域网文件共享'),
-                          value: 'SMB',
-                          groupValue: logic.selectedType.value,
-                          onChanged: (value) => logic.selectedType.value = value!,
-                        )),
-                  ),
-                  Expanded(
-                    child: Obx(() => RadioListTile(
-                          title: const Text('WebDAV'),
-                          subtitle: const Text('适用于远程网盘服务'),
-                          value: 'WebDAV',
-                          groupValue: logic.selectedType.value,
-                          onChanged: (value) => logic.selectedType.value = value!,
-                        )),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Text('基本信息', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text('服务信息', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               TextFormField(
                 controller: logic.nameController,
                 decoration: const InputDecoration(
-                  labelText: '账户名称',
+                  labelText: 'WebDAV 服务名称',
                   hintText: '请输入账户名称',
                   border: OutlineInputBorder(),
                 ),
@@ -179,13 +176,16 @@ class AddAccountPage extends StatelessWidget {
               TextFormField(
                 controller: logic.hostController,
                 decoration: const InputDecoration(
-                  labelText: '服务器地址',
-                  hintText: '请输入服务器IP或域名',
+                  labelText: 'WebDAV 地址',
+                  hintText: '例如：https://dav.example.com',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return '请输入服务器地址';
+                    return '请输入 WebDAV 地址';
+                  }
+                  if (!value.startsWith('http')) {
+                    return '请输入正确的 URL 地址';
                   }
                   return null;
                 },

@@ -1,8 +1,10 @@
 import 'dart:developer';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:only_sync_flutter/views/home/home_page.dart';
+import '../../../routes/route.dart';
 
 class AccountInfo {
   const AccountInfo(
@@ -21,101 +23,145 @@ class SyncInfo {
   final IconData selectedIcon;
 }
 
+class SyncDrawerController extends GetxController {
+  final accounts = <Map<String, dynamic>>[].obs;
+  final selectedAccountUrl = ''.obs; // 改用 URL 作为唯一标识
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadAccounts();
+  }
+
+  Future<void> loadAccounts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final accountsJson = prefs.getStringList('accounts') ?? [];
+    final activeUrl = prefs.getString('activeAccount');
+
+    accounts.value = accountsJson.map((e) => jsonDecode(e) as Map<String, dynamic>).toList();
+
+    if (accounts.isNotEmpty) {
+      selectedAccountUrl.value = activeUrl ?? accounts.first['url'];
+    }
+  }
+
+  Future<void> selectAccount(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('activeAccount', url);
+    selectedAccountUrl.value = url;
+    Get.snackbar('成功', '已切换同步账户');
+  }
+}
+
 class SyncDrawer extends StatelessWidget {
   const SyncDrawer({super.key});
 
-  final accountList = const [
-    AccountInfo(name: 'SMB', icon: Icons.lan_outlined, selectedIcon: Icons.lan),
-    AccountInfo(name: 'WebDAV', icon: Icons.cloud_outlined, selectedIcon: Icons.cloud),
-  ];
-
-  final syncList = const [
-    SyncInfo(name: '相册同步', icon: Icons.image_outlined, selectedIcon: Icons.image),
-    SyncInfo(name: '视频同步', icon: Icons.video_file_outlined, selectedIcon: Icons.video_file),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    // final HomeLogic homeLogic = Get.find();
-    return GetX<HomeLogic>(
-        builder: (homeLogic) => NavigationDrawer(
-              onDestinationSelected: (value) {
-                log('选择了：$value');
-                homeLogic.changePage(value);
-              },
-              selectedIndex: homeLogic.pageIndex.value,
+    final controller = Get.put(SyncDrawerController());
+    final theme = Theme.of(context);
+
+    return Drawer(
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: theme.primaryColor,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.primaryColor,
+                  theme.primaryColor.withOpacity(0.8),
+                ],
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const DrawerHeader(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Only Sync',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: theme.colorScheme.onPrimary,
+                  child: Icon(
+                    Icons.cloud_sync,
+                    size: 30,
+                    color: theme.primaryColor,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(30, 15, 30, 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('账户'),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () {
-                          // 去添加存储账户
-                          log('添加存储账户');
-                        },
-                      ),
-                    ],
+                const SizedBox(height: 12),
+                Text(
+                  '媒体同步',
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const NavigationDrawerDestination(
-                  icon: Icon(Icons.folder_outlined),
-                  label: Text(
-                    '本地存储',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  selectedIcon: Icon(Icons.folder),
-                  backgroundColor: Colors.redAccent,
-                ),
-                ...accountList
-                    .map((account) => NavigationDrawerDestination(
-                          icon: Icon(account.icon),
-                          label: Text(
-                            account.name,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          selectedIcon: Icon(account.selectedIcon),
-                        ))
-                    .toList(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(30, 15, 30, 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('同步'),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () {
-                          // 创建同步
-                          log('创建同步');
-                        },
-                      ),
-                    ],
+                const SizedBox(height: 4),
+                Text(
+                  '轻松同步您的照片和视频',
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                    fontSize: 14,
                   ),
                 ),
-                ...syncList
-                    .map((sync) => NavigationDrawerDestination(
-                          icon: Icon(sync.icon),
-                          label: Text(
-                            sync.name,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          selectedIcon: Icon(sync.selectedIcon),
-                        ))
-                    .toList(),
               ],
-            ));
+            ),
+          ),
+          Expanded(
+            child: Obx(() => ListView(
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Text(
+                        '同步账户',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    ...controller.accounts.map((account) => _buildAccountTile(
+                          context,
+                          account,
+                          isSelected: controller.selectedAccountUrl.value == account['url'],
+                          onTap: () => controller.selectAccount(account['url']),
+                        )),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.add),
+                      title: const Text('添加账户'),
+                      onTap: () {
+                        Get.back();
+                        Get.toNamed(Routes.addAccountPage);
+                      },
+                    ),
+                  ],
+                )),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountTile(BuildContext context, Map<String, dynamic> account,
+      {bool isSelected = false, VoidCallback? onTap}) {
+    return ListTile(
+      leading: Icon(
+        Icons.cloud,
+        color: isSelected ? Theme.of(context).primaryColor : null,
+      ),
+      title: Text(
+        account['name'] ?? '未命名账户',
+        style: TextStyle(
+          color: isSelected ? Theme.of(context).primaryColor : null,
+          fontWeight: isSelected ? FontWeight.bold : null,
+        ),
+      ),
+      subtitle: Text(account['url'] ?? ''),
+      selected: isSelected,
+      onTap: onTap,
+      trailing: isSelected ? Icon(Icons.check, color: Theme.of(context).primaryColor) : null,
+    );
   }
 }
