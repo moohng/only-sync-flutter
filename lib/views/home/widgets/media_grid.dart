@@ -6,6 +6,8 @@ import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:extended_image/extended_image.dart';
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 
 class MediaGridController extends GetxController with GetTickerProviderStateMixin {
   static const int pageSize = 30;
@@ -24,16 +26,10 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   final assetCache = <String, AssetEntity>{}.obs;
   late AnimationController fadeController;
 
-  // 默认扫描目录列表
-  final List<String> defaultDirectories = [
-    '/storage/emulated/0/DCIM',
-    '/storage/emulated/0/Pictures',
-    '/storage/emulated/0/Download',
-  ];
-
   // 添加加载状态控制
   final isLoadingMore = false.obs;
-  final loadedAssets = <String>{}.obs;
+  final isFirstLoad = true.obs;
+  final isInitializing = true.obs;
 
   @override
   void onInit() {
@@ -42,6 +38,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
       vsync: this,
     );
     super.onInit();
+    isInitializing.value = true;
     _initMediaManager();
   }
 
@@ -83,33 +80,37 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
         page: page.value,
         pageSize: pageSize,
       );
+      print('============== ${files.length}');
 
       if (files.isEmpty) {
         hasMore.value = false;
       } else {
         // 过滤已加载的资源
-        final newFiles = files.where((file) => !loadedAssets.contains(file.path));
-        if (newFiles.isNotEmpty) {
-          mediaFiles.addAll(newFiles);
-          loadedAssets.addAll(newFiles.map((e) => e.path));
-          page.value++;
-        } else {
+        if (files.length < pageSize) {
           hasMore.value = false;
+        }
+        if (files.isNotEmpty) {
+          if (page.value == 0) {
+            mediaFiles.clear();
+          }
+          mediaFiles.addAll(files);
+          page.value++;
         }
       }
     } catch (e) {
       print('加载失败: $e');
     } finally {
       isLoadingMore.value = false;
+      isFirstLoad.value = false;
+      isInitializing.value = false;
     }
   }
 
   Future<void> refresh() async {
     if (isLoading.value) return;
-    mediaFiles.clear();
-    loadedAssets.clear();
     page.value = 0;
     hasMore.value = true;
+    // isInitializing.value = true;
     await loadNextBatch();
   }
 
@@ -158,6 +159,8 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   void selectAlbum(AssetPathEntity album) {
     if (selectedAlbum.value?.id != album.id) {
       selectedAlbum.value = album;
+      mediaFiles.clear();
+      isInitializing.value = true;
       refresh();
     }
   }
@@ -255,55 +258,45 @@ class MediaGrid extends StatelessWidget {
   }
 
   Widget _buildMediaGrid(MediaGridController controller, ScrollController scrollController) {
-    if (controller.mediaFiles.isEmpty && !controller.isLoading.value) {
-      return const Center(child: Text('没有找到媒体文件'));
-    }
+    return Obx(() {
+      if (controller.isInitializing.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-    final grouped = controller.groupedMediaFiles;
+      if (controller.mediaFiles.isEmpty && !controller.isFirstLoad.value) {
+        return const Center(child: Text('暂无媒体文件'));
+      }
 
-    return Stack(
-      children: [
-        RefreshIndicator(
-          onRefresh: controller.refresh,
-          child: CustomScrollView(
-            controller: scrollController,
-            slivers: [
-              ...grouped.entries.map((entry) => SliverMediaGroup(
-                    month: entry.key,
-                    files: entry.value,
-                    onTapItem: (index) => controller.showPreview(
-                      entry.value,
-                      index,
+      final grouped = controller.groupedMediaFiles;
+
+      return Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: controller.refresh,
+            child: CustomScrollView(
+              controller: scrollController,
+              slivers: [
+                ...grouped.entries.map((entry) => SliverMediaGroup(
+                      month: entry.key,
+                      files: entry.value,
+                      onTapItem: (index) => controller.showPreview(
+                        entry.value,
+                        index,
+                      ),
+                    )),
+                if (controller.hasMore.value && !controller.isFirstLoad.value)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(child: CircularProgressIndicator()),
                     ),
-                  )),
-              if (controller.hasMore.value)
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(child: CircularProgressIndicator()),
                   ),
-                ),
-            ],
-          ),
-        ),
-        // 显示当前扫描路径
-        if (controller.currentPath.isNotEmpty)
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  '正在扫描: ${controller.currentPath}',
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              ],
             ),
           ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }
 
@@ -341,8 +334,8 @@ class SliverMediaGroup extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              crossAxisSpacing: 2,
+              mainAxisSpacing: 2,
             ),
             itemCount: files.length,
             itemBuilder: (context, index) => MediaGridItem(
@@ -377,7 +370,7 @@ class MediaGridItem extends StatelessWidget {
               color: Colors.grey.shade300,
               width: 0.5,
             ),
-            borderRadius: BorderRadius.circular(8),
+            // borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -387,7 +380,7 @@ class MediaGridItem extends StatelessWidget {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            // borderRadius: BorderRadius.circular(8),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -520,7 +513,7 @@ class MediaGridItem extends StatelessWidget {
 }
 
 // 修改MediaPreviewPage的图片加载逻辑
-class MediaPreviewPage extends StatelessWidget {
+class MediaPreviewPage extends StatefulWidget {
   final List<MediaFileInfo> files;
   final int initialIndex;
 
@@ -529,6 +522,99 @@ class MediaPreviewPage extends StatelessWidget {
     required this.files,
     required this.initialIndex,
   });
+
+  @override
+  State<MediaPreviewPage> createState() => _MediaPreviewPageState();
+}
+
+class _MediaPreviewPageState extends State<MediaPreviewPage> {
+  late PageController _pageController;
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+  int _currentIndex = 0;
+  bool _isVideoLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+    if (widget.files[widget.initialIndex].type == MediaType.video) {
+      _initializeVideoPlayer(widget.files[widget.initialIndex]);
+    }
+  }
+
+  @override
+  void dispose() {
+    _cleanupVideo();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _cleanupVideo() {
+    _chewieController?.dispose();
+    _videoController?.dispose();
+    _chewieController = null;
+    _videoController = null;
+  }
+
+  Future<void> _initializeVideoPlayer(MediaFileInfo file) async {
+    if (!mounted) return;
+
+    setState(() => _isVideoLoading = true);
+
+    try {
+      // 清理之前的视频控制器
+      _cleanupVideo();
+
+      if (file.type != MediaType.video) return;
+
+      final videoFile = File(file.path);
+      if (!await videoFile.exists()) {
+        throw Exception('视频文件不存在');
+      }
+
+      _videoController = VideoPlayerController.file(videoFile);
+
+      await _videoController!.initialize();
+      if (!mounted) return;
+
+      _chewieController = ChewieController(
+        videoPlayerController: _videoController!,
+        autoPlay: true,
+        looping: true,
+        showControls: true,
+        aspectRatio: _videoController!.value.aspectRatio,
+        errorBuilder: (context, errorMessage) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 42),
+                const SizedBox(height: 8),
+                Text(
+                  '视频加载失败: $errorMessage',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      print('视频初始化失败: $e');
+      _cleanupVideo();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('视频加载失败: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isVideoLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -540,46 +626,88 @@ class MediaPreviewPage extends StatelessWidget {
         elevation: 0,
       ),
       extendBodyBehindAppBar: true,
-      body: ExtendedImageGesturePageView.builder(
-        itemCount: files.length,
-        controller: ExtendedPageController(initialPage: initialIndex),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.files.length,
+        onPageChanged: (index) {
+          setState(() => _currentIndex = index);
+          final file = widget.files[index];
+          if (file.type == MediaType.video) {
+            _initializeVideoPlayer(file);
+          } else {
+            _cleanupVideo();
+          }
+        },
         itemBuilder: (context, index) {
-          final file = files[index];
-          return Hero(
-            tag: 'media_${file.path}',
-            child: ExtendedImage(
-              image: file is AssetEntityImageInfo
-                  ? AssetEntityImageProvider(
-                      file.asset,
-                      isOriginal: true,
-                    )
-                  : FileImage(File(file.path)) as ImageProvider,
-              fit: BoxFit.contain,
-              mode: ExtendedImageMode.gesture,
-              initGestureConfigHandler: (state) {
-                return GestureConfig(
-                  minScale: 0.9,
-                  maxScale: 3.0,
-                  animationMaxScale: 3.5,
-                  animationMinScale: 0.8,
-                );
-              },
-              loadStateChanged: (state) {
-                switch (state.extendedImageLoadState) {
-                  case LoadState.loading:
-                    return const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    );
-                  case LoadState.failed:
-                    return const Center(
-                      child: Icon(Icons.broken_image, color: Colors.white70, size: 64),
-                    );
-                  case LoadState.completed:
-                    return null;
-                }
-              },
+          final file = widget.files[index];
+          if (file.type == MediaType.video && index == _currentIndex) {
+            return _buildVideoPreview(file);
+          }
+          return _buildImagePreview(file);
+        },
+      ),
+    );
+  }
+
+  Widget _buildVideoPreview(MediaFileInfo file) {
+    if (_isVideoLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+
+    if (_chewieController == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white70, size: 48),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => _initializeVideoPlayer(file),
+              child: const Text(
+                '重试',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
-          );
+          ],
+        ),
+      );
+    }
+
+    return Center(
+      child: Chewie(controller: _chewieController!),
+    );
+  }
+
+  Widget _buildImagePreview(MediaFileInfo file) {
+    return Hero(
+      tag: 'media_${file.path}',
+      child: ExtendedImage(
+        image: file is AssetEntityImageInfo
+            ? AssetEntityImageProvider(file.asset, isOriginal: true)
+            : FileImage(File(file.path)) as ImageProvider,
+        fit: BoxFit.contain,
+        mode: ExtendedImageMode.gesture,
+        initGestureConfigHandler: (state) => GestureConfig(
+          minScale: 0.9,
+          maxScale: 3.0,
+          animationMaxScale: 3.5,
+          animationMinScale: 0.8,
+        ),
+        loadStateChanged: (state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              );
+            case LoadState.failed:
+              return const Center(
+                child: Icon(Icons.broken_image, color: Colors.white70, size: 64),
+              );
+            case LoadState.completed:
+              return null;
+          }
         },
       ),
     );
