@@ -125,8 +125,8 @@ class MediaManager {
           name: asset.title ?? 'Unknown',
           type: asset.type == AssetType.video ? MediaType.video : MediaType.image,
           size: await asset.originFile.then((file) => file?.lengthSync() ?? 0),
-          modifiedTime: await asset.modifiedDateTime,
-          createdTime: await asset.createDateTime,
+          modifiedTime: asset.modifiedDateTime,
+          createdTime: asset.createDateTime,
         ));
       }
 

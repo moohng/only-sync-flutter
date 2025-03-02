@@ -110,6 +110,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
     }
   }
 
+  @override
   Future<void> refresh() async {
     if (isLoading.value) return;
     page.value = 0;

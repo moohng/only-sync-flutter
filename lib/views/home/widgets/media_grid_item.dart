@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:photo_manager/photo_manager.dart';

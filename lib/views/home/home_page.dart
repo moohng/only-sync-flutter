@@ -119,17 +119,17 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       key: Get.nestedKey(1), // 添加唯一的key
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Text('媒体同步'),
-            const SizedBox(width: 8),
-            Obx(() => Icon(
+        title: Obx(() => Row(
+              children: [
+                Text(homeLogic.activeService?.name ?? 'Only Sync'),
+                const SizedBox(width: 8),
+                Icon(
                   homeLogic.isServiceAvailable.value ? Icons.cloud_done : Icons.cloud_off,
                   size: 20,
                   color: homeLogic.isServiceAvailable.value ? Colors.green : Colors.red,
-                )),
-          ],
-        ),
+                ),
+              ],
+            )),
         actions: [
           IconButton(
             icon: const Icon(Icons.sync),
@@ -139,27 +139,27 @@ class HomePage extends StatelessWidget {
               controller.syncAll();
             },
           ),
-          PopupMenuButton(
-            icon: const Icon(Icons.more_vert),
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 0,
-                child: Text('添加账户'),
-              ),
-              PopupMenuItem(
-                value: 1,
-                child: Text('新建同步'),
-              ),
-            ],
-            onSelected: (value) {
-              log('选择了：$value');
-              if (value == 0) {
-                Get.toNamed(Routes.addAccountPage);
-              } else if (value == 1) {
-                Get.toNamed(Routes.addSyncPage);
-              }
-            },
-          )
+          // PopupMenuButton(
+          //   icon: const Icon(Icons.more_vert),
+          //   itemBuilder: (context) => const [
+          //     PopupMenuItem(
+          //       value: 0,
+          //       child: Text('添加账户'),
+          //     ),
+          //     PopupMenuItem(
+          //       value: 1,
+          //       child: Text('新建同步'),
+          //     ),
+          //   ],
+          //   onSelected: (value) {
+          //     log('选择了：$value');
+          //     if (value == 0) {
+          //       Get.toNamed(Routes.addAccountPage);
+          //     } else if (value == 1) {
+          //       Get.toNamed(Routes.addSyncPage);
+          //     }
+          //   },
+          // )
         ],
       ),
       drawer: const SyncDrawer(),
