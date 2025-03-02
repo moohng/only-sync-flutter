@@ -77,7 +77,7 @@ class MediaManager {
   // 添加更新存储服务的方法
   void updateStorageService(StorageService? service, {String? remoteBasePath}) {
     _storageService = service;
-    _remoteBasePath = remoteBasePath ?? '/media';
+    _remoteBasePath = remoteBasePath ?? _remoteBasePath;
   }
 
   /// 缩略图缓存目录
@@ -129,7 +129,6 @@ class MediaManager {
         final mediaFile = AssetEntityImageInfo(
           asset: asset,
           path: file.path,
-          thumbnailPath: await _generateThumbnail(file.path),
           name: asset.title ?? 'Unknown',
           type: asset.type == AssetType.video ? MediaType.video : MediaType.image,
           size: file.lengthSync(),
@@ -166,6 +165,14 @@ class MediaManager {
       try {
         final entry = _syncCheckQueue.entries.first;
         final file = entry.value;
+
+        // 检查缩略图
+        if (file.thumbnailPath == null) {
+          final thumbnailPath = await _generateThumbnail(file.path);
+          if (thumbnailPath != null) {
+            file.copyWith(thumbnailPath: thumbnailPath);
+          }
+        }
 
         // 构建远程路径
         final dateStr = DateFormat('yyyy/MM').format(file.modifiedTime);

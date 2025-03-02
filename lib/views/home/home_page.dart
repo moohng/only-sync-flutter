@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:only_sync_flutter/routes/route.dart';
 import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
 import 'package:only_sync_flutter/views/home/widgets/media_grid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,7 +11,7 @@ class HomeLogic extends GetxController {
   var pageIndex = 0.obs;
   var hasRemoteConfig = false.obs;
   WebDAVService? activeService;
-  final isServiceAvailable = true.obs;
+  final isServiceAvailable = false.obs;
 
   @override
   void onInit() {
