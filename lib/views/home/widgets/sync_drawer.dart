@@ -142,7 +142,7 @@ class SyncDrawer extends StatelessWidget {
                       leading: const Icon(Icons.add),
                       title: const Text('添加账户'),
                       onTap: () {
-                        Get.back();
+                        // Get.back();
                         Get.toNamed(Routes.addAccountPage);
                       },
                     ),

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/storage/storage_service.dart';
+import 'package:only_sync_flutter/views/home/home_page.dart';
 import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -61,6 +62,8 @@ class AddAccountLogic extends GetxController {
       await prefs.setString('activeAccount', hostController.text);
 
       Get.find<SyncDrawerController>().loadAccounts();
+      // 切换存储服务
+      await Get.find<HomeLogic>().switchStorageService(accountMap);
       Get.back();
       Get.snackbar('成功', '账户添加成功并已启用');
     } catch (e) {
