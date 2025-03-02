@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -74,11 +75,9 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
         onTap: widget.onTap,
         child: Stack(
           children: [
-            // 媒体预览
             _buildPreview(),
-            // 渐变遮罩
             _buildGradientOverlay(),
-            // 同步状态指示器
+            // 同步状态图标
             Positioned(
               top: 4,
               right: 4,
@@ -95,7 +94,25 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
                   size: 24,
                 ),
               ),
-            // 同步进度遮罩
+            // 已同步标识
+            if (widget.file.syncStatus == SyncStatus.synced)
+              Positioned(
+                top: 4,
+                left: 4,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                ),
+              ),
+            // 同步进度动画
             if (widget.file.syncStatus == SyncStatus.syncing)
               AnimatedBuilder(
                 animation: _syncAnimation,
@@ -152,34 +169,41 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
   Widget _buildPreview() {
     if (widget.file is AssetEntityImageInfo) {
       final asset = (widget.file as AssetEntityImageInfo).asset;
-      return ExtendedImage(
-        image: AssetEntityImageProvider(
-          asset,
-          thumbnailSize: const ThumbnailSize(200, 200),
-          isOriginal: false,
+      return Container(
+        decoration: BoxDecoration(
+          border: widget.file.syncStatus == SyncStatus.synced
+              ? Border.all(color: Colors.green.withOpacity(0.5), width: 2)
+              : null,
         ),
-        fit: BoxFit.cover,
-        loadStateChanged: (state) {
-          switch (state.extendedImageLoadState) {
-            case LoadState.loading:
-              return const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              );
-            case LoadState.failed:
-              return const Center(
-                child: Icon(Icons.broken_image, color: Colors.grey),
-              );
-            case LoadState.completed:
-              return ExtendedRawImage(
-                image: state.extendedImageInfo?.image,
-                fit: BoxFit.cover,
-              );
-          }
-        },
+        child: ExtendedImage(
+          image: AssetEntityImageProvider(
+            asset,
+            thumbnailSize: const ThumbnailSize(200, 200),
+            isOriginal: false,
+          ),
+          fit: BoxFit.cover,
+          loadStateChanged: (state) {
+            switch (state.extendedImageLoadState) {
+              case LoadState.loading:
+                return const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              case LoadState.failed:
+                return const Center(
+                  child: Icon(Icons.broken_image, color: Colors.grey),
+                );
+              case LoadState.completed:
+                return ExtendedRawImage(
+                  image: state.extendedImageInfo?.image,
+                  fit: BoxFit.cover,
+                );
+            }
+          },
+        ),
       );
     }
     return Image.file(

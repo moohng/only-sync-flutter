@@ -119,20 +119,39 @@ class MediaManager {
       final List<MediaFileInfo> mediaFiles = [];
 
       for (final asset in assets) {
+        final file = await asset.file;
+        if (file == null) continue;
+
+        // 构建远程路径
+        final dateStr = DateFormat('yyyy/MM').format(asset.modifiedDateTime);
+        final remotePath = '$_remoteBasePath/$dateStr/${asset.title}';
+
+        // 检查远程文件是否存在
+        bool isSynced = false;
+        if (_storageService != null) {
+          try {
+            isSynced = await _storageService!.checkFileExists(remotePath);
+          } catch (e) {
+            print('检查文件同步状态失败: $e');
+          }
+        }
+
         mediaFiles.add(AssetEntityImageInfo(
           asset: asset,
-          path: (await asset.file)?.path ?? '',
+          path: file.path,
           name: asset.title ?? 'Unknown',
           type: asset.type == AssetType.video ? MediaType.video : MediaType.image,
-          size: await asset.originFile.then((file) => file?.lengthSync() ?? 0),
+          size: file.lengthSync(),
           modifiedTime: asset.modifiedDateTime,
           createdTime: asset.createDateTime,
+          syncStatus: isSynced ? SyncStatus.synced : SyncStatus.notSynced,
+          remotePath: isSynced ? remotePath : null,
         ));
       }
 
       return mediaFiles;
     } catch (e) {
-      print('Get media files error: $e');
+      print('获取媒体文件失败: $e');
       return [];
     }
   }
@@ -250,6 +269,14 @@ class MediaManager {
       final dateStr = DateFormat('yyyy/MM').format(file.modifiedTime);
       final remotePath = '$_remoteBasePath/$dateStr/${file.name}';
 
+      // 检查文件是否已经同步
+      if (await _storageService!.checkFileExists(remotePath)) {
+        return file.copyWith(
+          syncStatus: SyncStatus.synced,
+          remotePath: remotePath,
+        );
+      }
+
       // 上传文件
       await _storageService!.uploadFile(file.path, remotePath);
 
@@ -322,6 +349,8 @@ class AssetEntityImageInfo extends MediaFileInfo {
     required int size,
     required DateTime modifiedTime,
     required DateTime createdTime,
+    required SyncStatus syncStatus,
+    required String? remotePath,
   }) : super(
           path: path,
           name: name,
@@ -329,5 +358,7 @@ class AssetEntityImageInfo extends MediaFileInfo {
           size: size,
           modifiedTime: modifiedTime,
           createdTime: createdTime,
+          syncStatus: syncStatus,
+          remotePath: remotePath,
         );
 }

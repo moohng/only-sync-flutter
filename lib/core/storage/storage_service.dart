@@ -9,6 +9,7 @@ abstract class StorageService {
   Future<void> testConnection();
   Future<void> saveAccount();
   Future<void> uploadFile(String localPath, String remotePath);
+  Future<bool> checkFileExists(String remotePath);
 }
 
 class SMBService extends StorageService {
@@ -65,6 +66,12 @@ class SMBService extends StorageService {
   @override
   Future<void> uploadFile(String localPath, String remotePath) async {
     // Implement SMB file upload logic here
+  }
+
+  @override
+  Future<bool> checkFileExists(String remotePath) async {
+    // Implement SMB file existence check logic here
+    return false;
   }
 }
 
@@ -130,6 +137,17 @@ class WebDAVService extends StorageService {
       await client.writeFromFile(localPath, remotePath);
     } catch (e) {
       throw Exception('上传失败: $e');
+    }
+  }
+
+  @override
+  Future<bool> checkFileExists(String remotePath) async {
+    try {
+      await client.readProps(remotePath);
+      return true;
+    } catch (e) {
+      print('检查文件存在失败: $e');
+      return false;
     }
   }
 
