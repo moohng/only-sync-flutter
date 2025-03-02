@@ -39,6 +39,16 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
     super.onInit();
     isInitializing.value = true;
     _initMediaManager();
+    _mediaManager.onSyncStatusChanged = _updateFileStatus;
+  }
+
+  void _updateFileStatus(MediaFileInfo updatedFile) {
+    final index = mediaFiles.indexWhere((f) => f.path == updatedFile.path);
+    if (index != -1) {
+      mediaFiles[index] = updatedFile;
+      // 使用 refresh() 而不是 update() 避免整个列表重建
+      mediaFiles.refresh();
+    }
   }
 
   @override

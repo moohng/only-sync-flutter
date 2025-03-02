@@ -65,6 +65,8 @@ class MediaManager {
   StorageService? _storageService;
   String? _remoteBasePath;
   bool _hasPermission = false;
+  final _syncCheckQueue = <String, MediaFileInfo>{};
+  bool _isCheckingSync = false;
 
   MediaManager({StorageService? storageService, String? remoteBasePath = '/only_sync'})
       : _storageService = storageService,
@@ -122,21 +124,7 @@ class MediaManager {
         final file = await asset.file;
         if (file == null) continue;
 
-        // 构建远程路径
-        final dateStr = DateFormat('yyyy/MM').format(asset.modifiedDateTime);
-        final remotePath = '$_remoteBasePath/$dateStr/${asset.title}';
-
-        // 检查远程文件是否存在
-        bool isSynced = false;
-        if (_storageService != null) {
-          try {
-            isSynced = await _storageService!.checkFileExists(remotePath);
-          } catch (e) {
-            print('检查文件同步状态失败: $e');
-          }
-        }
-
-        mediaFiles.add(AssetEntityImageInfo(
+        final mediaFile = AssetEntityImageInfo(
           asset: asset,
           path: file.path,
           name: asset.title ?? 'Unknown',
@@ -144,10 +132,17 @@ class MediaManager {
           size: file.lengthSync(),
           modifiedTime: asset.modifiedDateTime,
           createdTime: asset.createDateTime,
-          syncStatus: isSynced ? SyncStatus.synced : SyncStatus.notSynced,
-          remotePath: isSynced ? remotePath : null,
-        ));
+          syncStatus: SyncStatus.notSynced,
+          remotePath: null,
+        );
+
+        mediaFiles.add(mediaFile);
+        // 加入检查队列
+        _queueSyncCheck(mediaFile);
       }
+
+      // 开始后台检查
+      _startSyncCheck();
 
       return mediaFiles;
     } catch (e) {
@@ -155,6 +150,49 @@ class MediaManager {
       return [];
     }
   }
+
+  void _queueSyncCheck(MediaFileInfo file) {
+    _syncCheckQueue[file.path] = file;
+  }
+
+  Future<void> _startSyncCheck() async {
+    if (_isCheckingSync || _syncCheckQueue.isEmpty || _storageService == null) return;
+
+    _isCheckingSync = true;
+    while (_syncCheckQueue.isNotEmpty) {
+      try {
+        final entry = _syncCheckQueue.entries.first;
+        final file = entry.value;
+
+        // 构建远程路径
+        final dateStr = DateFormat('yyyy/MM').format(file.modifiedTime);
+        final remotePath = '$_remoteBasePath/$dateStr/${file.name}';
+
+        final exists = await _storageService!.checkFileExists(remotePath);
+        if (exists) {
+          // 通知UI更新
+          onSyncStatusChanged?.call(file.copyWith(
+            syncStatus: SyncStatus.synced,
+            remotePath: remotePath,
+          ));
+        }
+
+        _syncCheckQueue.remove(entry.key);
+        // 添加小延迟避免过度占用资源
+        await Future.delayed(const Duration(milliseconds: 100));
+      } catch (e) {
+        print('检查同步状态失败: $e');
+        // 出错时也要移除，避免卡住队列
+        if (_syncCheckQueue.isNotEmpty) {
+          _syncCheckQueue.remove(_syncCheckQueue.keys.first);
+        }
+      }
+    }
+    _isCheckingSync = false;
+  }
+
+  // 添加状态变化回调
+  void Function(MediaFileInfo file)? onSyncStatusChanged;
 
   /// 扫描指定目录下的媒体文件
   Future<List<MediaFileInfo>> scanDirectory(
