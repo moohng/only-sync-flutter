@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:only_sync_flutter/core/store/app_store.dart';
 import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
 import 'package:only_sync_flutter/views/home/widgets/media_grid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,7 +12,6 @@ class HomeLogic extends GetxController {
   var pageIndex = 0.obs;
   var hasRemoteConfig = false.obs;
   WebDAVService? activeService;
-  final isServiceAvailable = false.obs;
 
   @override
   void onInit() {
@@ -56,10 +56,11 @@ class HomeLogic extends GetxController {
         // 确保 MediaGridController 已经初始化
         await Get.putAsync(() async => MediaGridController());
         // 更新存储服务
-        Get.find<MediaGridController>().updateStorageService(activeService, isAvailable: isServiceAvailable.value);
+        Get.find<MediaGridController>()
+            .updateStorageService(activeService, isAvailable: AppStore.to.isServiceAvailable.value);
       }
     } catch (e) {
-      isServiceAvailable.value = false;
+      AppStore.to.updateServiceStatus(false);
       print('初始化存储服务失败: $e');
     }
   }
@@ -68,12 +69,12 @@ class HomeLogic extends GetxController {
     try {
       if (activeService != null) {
         await activeService!.testConnection();
-        isServiceAvailable.value = true;
+        AppStore.to.updateServiceStatus(true);
       } else {
-        isServiceAvailable.value = false;
+        AppStore.to.updateServiceStatus(false);
       }
     } catch (e) {
-      isServiceAvailable.value = false;
+      AppStore.to.updateServiceStatus(false);
       print('服务不可用: $e');
     }
   }
@@ -89,9 +90,10 @@ class HomeLogic extends GetxController {
       );
 
       await _checkServiceAvailability();
-      Get.find<MediaGridController>().updateStorageService(activeService, isAvailable: isServiceAvailable.value);
+      Get.find<MediaGridController>()
+          .updateStorageService(activeService, isAvailable: AppStore.to.isServiceAvailable.value);
     } catch (e) {
-      isServiceAvailable.value = false;
+      AppStore.to.updateServiceStatus(false);
       print('切换存储服务失败: $e');
       Get.snackbar('错误', '切换存储服务失败：$e');
     }
@@ -117,47 +119,29 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       key: Get.nestedKey(1), // 添加唯一的key
       appBar: AppBar(
+        forceMaterialTransparency: true,
         title: Obx(() => Row(
               children: [
                 Text(homeLogic.activeService?.name ?? 'Only Sync'),
                 const SizedBox(width: 8),
                 Icon(
-                  homeLogic.isServiceAvailable.value ? Icons.cloud_done : Icons.cloud_off,
+                  AppStore.to.isServiceAvailable.value ? Icons.cloud_done : Icons.cloud_off,
                   size: 20,
-                  color: homeLogic.isServiceAvailable.value ? Colors.green : Colors.red,
+                  color: AppStore.to.isServiceAvailable.value ? Colors.green : Colors.red,
                 ),
               ],
             )),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.sync),
-            onPressed: () {
-              // 全部同步
-              final controller = Get.find<MediaGridController>();
-              controller.syncAll();
-            },
-          ),
-          // PopupMenuButton(
-          //   icon: const Icon(Icons.more_vert),
-          //   itemBuilder: (context) => const [
-          //     PopupMenuItem(
-          //       value: 0,
-          //       child: Text('添加账户'),
-          //     ),
-          //     PopupMenuItem(
-          //       value: 1,
-          //       child: Text('新建同步'),
-          //     ),
-          //   ],
-          //   onSelected: (value) {
-          //     log('选择了：$value');
-          //     if (value == 0) {
-          //       Get.toNamed(Routes.addAccountPage);
-          //     } else if (value == 1) {
-          //       Get.toNamed(Routes.addSyncPage);
-          //     }
-          //   },
-          // )
+          Obx(() => AppStore.to.isServiceAvailable.value
+              ? IconButton(
+                  icon: const Icon(Icons.sync),
+                  onPressed: () {
+                    // 全部同步
+                    final controller = Get.find<MediaGridController>();
+                    controller.syncAll();
+                  },
+                )
+              : const SizedBox()),
         ],
       ),
       drawer: const SyncDrawer(),

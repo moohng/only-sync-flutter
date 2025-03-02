@@ -264,7 +264,8 @@ class MediaGrid extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
+            offset: const Offset(0, 2),
+            blurRadius: 2,
           ),
         ],
       ),
@@ -276,29 +277,48 @@ class MediaGrid extends StatelessWidget {
           final album = controller.albums[index];
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Obx(() => ActionChip(
-                  avatar: FutureBuilder<int>(
+            child: Obx(
+              () => ActionChip(
+                labelStyle: const TextStyle(fontSize: 12),
+                // elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
+                  side: BorderSide(
+                    color: controller.selectedAlbum.value?.id == album.id
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey.withOpacity(0.1),
+                  ),
+                ),
+                backgroundColor: controller.selectedAlbum.value?.id == album.id
+                    ? Theme.of(context).primaryColor
+                    : Colors.grey.withOpacity(0.1),
+                label: FutureBuilder<int>(
                     future: album.assetCountAsync,
-                    builder: (context, snapshot) {
-                      return Text(
-                        '${snapshot.data ?? 0}',
-                        style: TextStyle(
-                          color: controller.selectedAlbum.value?.id == album.id ? Colors.white : Colors.grey,
-                        ),
-                      );
-                    },
-                  ),
-                  backgroundColor: controller.selectedAlbum.value?.id == album.id
-                      ? Theme.of(context).primaryColor
-                      : Colors.grey.withOpacity(0.1),
-                  label: Text(
-                    album.name,
-                    style: TextStyle(
-                      color: controller.selectedAlbum.value?.id == album.id ? Colors.white : Colors.black,
-                    ),
-                  ),
-                  onPressed: () => controller.selectAlbum(album),
-                )),
+                    builder: (context, snapshot) => Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              album.isAll ? '全部' : album.name,
+                              style: TextStyle(
+                                color: controller.selectedAlbum.value?.id == album.id ? Colors.white : Colors.black,
+                              ),
+                            ),
+                            if (snapshot.hasData) ...[
+                              const SizedBox(width: 4),
+                              Text(
+                                snapshot.data.toString(),
+                                style: TextStyle(
+                                  color:
+                                      controller.selectedAlbum.value?.id == album.id ? Colors.white70 : Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ],
+                        )),
+                onPressed: () => controller.selectAlbum(album),
+              ),
+            ),
           );
         },
       ),

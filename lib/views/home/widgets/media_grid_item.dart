@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
 import 'package:extended_image/extended_image.dart';
+import 'package:only_sync_flutter/core/store/app_store.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 
@@ -83,11 +83,12 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
             _buildPreview(),
             _buildGradientOverlay(),
             // 同步状态图标
-            Positioned(
-              top: 4,
-              right: 4,
-              child: _buildSyncButton(context),
-            ),
+            if (AppStore.to.isServiceAvailable.value)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: _buildSyncButton(context),
+              ),
             // 视频时长标识
             if (widget.file.type == MediaType.video)
               FutureBuilder<int>(

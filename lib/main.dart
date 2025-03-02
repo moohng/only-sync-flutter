@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:only_sync_flutter/core/store/app_store.dart';
 import 'package:only_sync_flutter/routes/route.dart';
 
 void main() {
+  // 初始化全局状态
+  Get.put(AppStore(), permanent: true);
+
   runApp(const MyApp());
 }
 
