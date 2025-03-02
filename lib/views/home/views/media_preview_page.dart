@@ -7,7 +7,7 @@ import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 
 class MediaPreviewPage extends StatefulWidget {
-  final List<MediaFileInfo> files;
+  final List<AssetEntityImageInfo> files;
   final int initialIndex;
 
   const MediaPreviewPage({
@@ -51,7 +51,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
     _videoController = null;
   }
 
-  Future<void> _initializeVideoPlayer(MediaFileInfo file) async {
+  Future<void> _initializeVideoPlayer(AssetEntityImageInfo file) async {
     if (!mounted) return;
 
     setState(() => _isVideoLoading = true);
@@ -142,7 +142,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
     );
   }
 
-  Widget _buildVideoPreview(MediaFileInfo file) {
+  Widget _buildVideoPreview(AssetEntityImageInfo file) {
     if (_isVideoLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.white),
@@ -173,13 +173,11 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
     );
   }
 
-  Widget _buildImagePreview(MediaFileInfo file) {
+  Widget _buildImagePreview(AssetEntityImageInfo file) {
     return Hero(
       tag: 'media_${file.path}',
       child: ExtendedImage(
-        image: file is AssetEntityImageInfo
-            ? AssetEntityImageProvider(file.asset, isOriginal: true)
-            : FileImage(File(file.path)) as ImageProvider,
+        image: AssetEntityImageProvider(file.asset, isOriginal: true),
         fit: BoxFit.contain,
         mode: ExtendedImageMode.gesture,
         initGestureConfigHandler: (state) => GestureConfig(

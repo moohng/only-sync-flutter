@@ -10,7 +10,7 @@ import 'package:photo_manager/photo_manager.dart';
 class MediaGridController extends GetxController with GetTickerProviderStateMixin {
   static const int pageSize = 30;
 
-  final mediaFiles = <MediaFileInfo>[].obs;
+  final mediaFiles = <AssetEntityImageInfo>[].obs;
   final isLoading = false.obs;
   final hasMore = true.obs;
   final currentPath = ''.obs;
@@ -42,7 +42,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
     _mediaManager.onSyncStatusChanged = _updateFileStatus;
   }
 
-  void _updateFileStatus(MediaFileInfo updatedFile) {
+  void _updateFileStatus(AssetEntityImageInfo updatedFile) {
     final index = mediaFiles.indexWhere((f) => f.path == updatedFile.path);
     if (index != -1) {
       mediaFiles[index] = updatedFile;
@@ -129,7 +129,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
     await loadNextBatch();
   }
 
-  Future<void> syncFile(MediaFileInfo file) async {
+  Future<void> syncFile(AssetEntityImageInfo file) async {
     if (!isServiceAvailable.value) {
       Get.snackbar(
         '同步失败',
@@ -185,8 +185,8 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   }
 
   /// 获取按月份分组的媒体文件
-  Map<String, List<MediaFileInfo>> get groupedMediaFiles {
-    final grouped = <String, List<MediaFileInfo>>{};
+  Map<String, List<AssetEntityImageInfo>> get groupedMediaFiles {
+    final grouped = <String, List<AssetEntityImageInfo>>{};
     for (final file in mediaFiles) {
       final month = DateFormat('yyyy年MM月').format(file.modifiedTime);
       if (!grouped.containsKey(month)) {
@@ -197,7 +197,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
     return Map.fromEntries(grouped.entries.toList()..sort((a, b) => b.key.compareTo(a.key)));
   }
 
-  void showPreview(List<MediaFileInfo> files, int initialIndex) {
+  void showPreview(List<AssetEntityImageInfo> files, int initialIndex) {
     Get.to(() => MediaPreviewPage(
           files: files,
           initialIndex: initialIndex,
@@ -368,7 +368,7 @@ class MediaGrid extends StatelessWidget {
 
 class SliverMediaGroup extends StatelessWidget {
   final String month;
-  final List<MediaFileInfo> files;
+  final List<AssetEntityImageInfo> files;
   final Function(int) onTapItem;
 
   const SliverMediaGroup({

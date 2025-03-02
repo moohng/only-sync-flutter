@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:intl/intl.dart';
-import 'package:only_sync_flutter/core/storage/storage_engine.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -14,7 +13,8 @@ enum MediaType { image, video }
 enum SyncStatus { notSynced, syncing, synced, failed }
 
 /// 媒体文件信息
-class MediaFileInfo {
+class AssetEntityImageInfo {
+  final AssetEntity asset;
   final String path;
   final String name;
   final MediaType type;
@@ -26,26 +26,28 @@ class MediaFileInfo {
   final String? remotePath;
   final String? thumbnailPath;
 
-  MediaFileInfo({
+  AssetEntityImageInfo({
+    required this.asset,
     required this.path,
     required this.name,
     required this.type,
     required this.size,
     required this.modifiedTime,
     required this.createdTime,
-    this.syncStatus = SyncStatus.notSynced,
+    required this.syncStatus,
     this.syncError,
     this.remotePath,
     this.thumbnailPath,
   });
 
-  MediaFileInfo copyWith({
+  AssetEntityImageInfo copyWith({
     SyncStatus? syncStatus,
     String? syncError,
     String? remotePath,
     String? thumbnailPath,
   }) {
-    return MediaFileInfo(
+    return AssetEntityImageInfo(
+      asset: asset,
       path: path,
       name: name,
       type: type,
@@ -65,7 +67,7 @@ class MediaManager {
   StorageService? _storageService;
   String? _remoteBasePath;
   bool _hasPermission = false;
-  final _syncCheckQueue = <String, MediaFileInfo>{};
+  final _syncCheckQueue = <String, AssetEntityImageInfo>{};
   bool _isCheckingSync = false;
 
   MediaManager({StorageService? storageService, String? remoteBasePath = '/only_sync'})
@@ -111,14 +113,14 @@ class MediaManager {
   }
 
   /// 获取媒体文件
-  Future<List<MediaFileInfo>> getMediaFiles({
+  Future<List<AssetEntityImageInfo>> getMediaFiles({
     required AssetPathEntity album,
     int page = 0,
     int pageSize = 30,
   }) async {
     try {
       final assets = await album.getAssetListPaged(page: page, size: pageSize);
-      final List<MediaFileInfo> mediaFiles = [];
+      final List<AssetEntityImageInfo> mediaFiles = [];
 
       for (final asset in assets) {
         final file = await asset.file;
@@ -127,6 +129,7 @@ class MediaManager {
         final mediaFile = AssetEntityImageInfo(
           asset: asset,
           path: file.path,
+          thumbnailPath: await _generateThumbnail(file.path),
           name: asset.title ?? 'Unknown',
           type: asset.type == AssetType.video ? MediaType.video : MediaType.image,
           size: file.lengthSync(),
@@ -151,7 +154,7 @@ class MediaManager {
     }
   }
 
-  void _queueSyncCheck(MediaFileInfo file) {
+  void _queueSyncCheck(AssetEntityImageInfo file) {
     _syncCheckQueue[file.path] = file;
   }
 
@@ -192,73 +195,12 @@ class MediaManager {
   }
 
   // 添加状态变化回调
-  void Function(MediaFileInfo file)? onSyncStatusChanged;
-
-  /// 扫描指定目录下的媒体文件
-  Future<List<MediaFileInfo>> scanDirectory(
-    String dirPath, {
-    void Function(int current, int total)? onProgress,
-    int? limit,
-    int offset = 0,
-  }) async {
-    final dir = Directory(dirPath);
-    if (!await dir.exists()) {
-      print('目录不存在: $dirPath');
-      return [];
-    }
-
-    print('开始扫描目录: $dirPath');
-    final List<MediaFileInfo> mediaFiles = [];
-    List<FileSystemEntity> entities = [];
-
-    try {
-      entities = await dir.list(recursive: true).toList();
-      print('找到实体数量: ${entities.length}');
-    } catch (e) {
-      print('列出目录内容失败: $e');
-      return [];
-    }
-
-    final int totalFiles = entities.length;
-    int processedFiles = 0;
-
-    for (final entity in entities.skip(offset).take(limit ?? double.maxFinite.toInt())) {
-      try {
-        if (entity is File) {
-          final extension = path.extension(entity.path).toLowerCase().replaceFirst('.', '');
-          if (_isMediaFile(extension)) {
-            print('处理媒体文件: ${entity.path}');
-            final stat = await entity.stat();
-            final thumbnailPath = await _generateThumbnail(entity.path, extension);
-
-            mediaFiles.add(
-              MediaFileInfo(
-                path: entity.path,
-                name: path.basename(entity.path),
-                type: _getMediaType(extension),
-                size: stat.size,
-                modifiedTime: stat.modified,
-                createdTime: stat.changed,
-                thumbnailPath: thumbnailPath,
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        print('处理文件失败: ${entity.path}, 错误: $e');
-      }
-
-      processedFiles++;
-      onProgress?.call(processedFiles, totalFiles);
-    }
-
-    print('目录扫描完成: $dirPath, 找到媒体文件: ${mediaFiles.length}');
-    return mediaFiles;
-  }
+  void Function(AssetEntityImageInfo file)? onSyncStatusChanged;
 
   /// 生成缩略图
-  Future<String?> _generateThumbnail(String filePath, String extension) async {
+  Future<String?> _generateThumbnail(String filePath) async {
     // 只为图片生成缩略图
+    final extension = path.extension(filePath).toLowerCase().substring(1);
     if (!_imageExtensions.contains(extension)) {
       return null;
     }
@@ -294,7 +236,7 @@ class MediaManager {
   }
 
   /// 同步单个文件
-  Future<MediaFileInfo> syncFile(MediaFileInfo file) async {
+  Future<AssetEntityImageInfo> syncFile(AssetEntityImageInfo file) async {
     if (_storageService == null || _remoteBasePath == null) {
       return file.copyWith(
         syncStatus: SyncStatus.failed,
@@ -333,8 +275,8 @@ class MediaManager {
   }
 
   /// 同步多个文件
-  Future<List<MediaFileInfo>> syncFiles(List<MediaFileInfo> files) async {
-    final results = <MediaFileInfo>[];
+  Future<List<AssetEntityImageInfo>> syncFiles(List<AssetEntityImageInfo> files) async {
+    final results = <AssetEntityImageInfo>[];
     for (final file in files) {
       results.add(await syncFile(file));
     }
@@ -374,29 +316,4 @@ class MediaManager {
     'wmv',
     'm4v',
   };
-}
-
-class AssetEntityImageInfo extends MediaFileInfo {
-  final AssetEntity asset;
-
-  AssetEntityImageInfo({
-    required this.asset,
-    required String path,
-    required String name,
-    required MediaType type,
-    required int size,
-    required DateTime modifiedTime,
-    required DateTime createdTime,
-    required SyncStatus syncStatus,
-    required String? remotePath,
-  }) : super(
-          path: path,
-          name: name,
-          type: type,
-          size: size,
-          modifiedTime: modifiedTime,
-          createdTime: createdTime,
-          syncStatus: syncStatus,
-          remotePath: remotePath,
-        );
 }

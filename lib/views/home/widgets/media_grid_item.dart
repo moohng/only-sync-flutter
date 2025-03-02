@@ -1,13 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 
 class MediaGridItem extends StatefulWidget {
-  final MediaFileInfo file;
+  final AssetEntityImageInfo file;
   final VoidCallback? onSync;
   final VoidCallback? onTap;
 
@@ -90,31 +89,33 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
               child: _buildSyncButton(context),
             ),
             // 视频时长标识
-            if (widget.file.type == MediaType.video && widget.file is AssetEntityImageInfo)
-              Positioned(
-                bottom: 4,
-                right: 4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withAlpha(50),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: FutureBuilder<Duration?>(
-                    future: Future.value(Duration(seconds: (widget.file as AssetEntityImageInfo).asset.duration)),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const SizedBox();
-                      return Text(
-                        _formatDuration(snapshot.data!),
+            if (widget.file.type == MediaType.video)
+              FutureBuilder<int>(
+                future: Future.value(widget.file.asset.duration),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || snapshot.data == 0) {
+                    return const SizedBox();
+                  }
+                  return Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      // decoration: BoxDecoration(
+                      //   color: Colors.black.withOpacity(0.7),
+                      //   borderRadius: BorderRadius.circular(4),
+                      // ),
+                      child: Text(
+                        _formatDuration(Duration(seconds: snapshot.data!)),
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
-                          height: 1.2,
+                          fontSize: 10,
+                          height: 1.1,
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ),
+                    ),
+                  );
+                },
               ),
             // 同步进度动画
             if (widget.file.syncStatus == SyncStatus.syncing)
@@ -173,83 +174,49 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
   Widget _buildPreview() {
     return AspectRatio(
       aspectRatio: 1, // 确保容器是正方形
-      child: Container(
-        decoration: BoxDecoration(
-          border: widget.file.syncStatus == SyncStatus.synced
-              ? Border.all(color: Colors.green.withAlpha(128), width: 2)
-              : null,
-        ),
-        child: ClipRRect(
-          child: _buildMediaPreview(),
-        ),
-      ),
+      child: _buildMediaPreview(),
     );
   }
 
   Widget _buildMediaPreview() {
-    if (widget.file is AssetEntityImageInfo) {
-      final asset = (widget.file as AssetEntityImageInfo).asset;
-      return ExtendedImage(
-        image: AssetEntityImageProvider(
-          asset,
-          thumbnailSize: const ThumbnailSize(300, 300), // 增加缩略图尺寸
-          isOriginal: false,
-        ),
-        fit: BoxFit.cover, // 使用 cover 确保填满
-        loadStateChanged: (state) {
-          switch (state.extendedImageLoadState) {
-            case LoadState.loading:
-              return const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              );
-            case LoadState.failed:
-              return Center(
-                child: Icon(
-                  Icons.broken_image,
-                  color: Colors.grey.withAlpha(76),
-                  size: 40,
-                ),
-              );
-            case LoadState.completed:
-              return ExtendedRawImage(
-                image: state.extendedImageInfo?.image,
-                fit: BoxFit.cover,
-                // 添加过渡动画
-                scale: 1.0,
-                width: double.infinity,
-                height: double.infinity,
-              );
-          }
-        },
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withAlpha(8),
+    final asset = widget.file.asset;
+    return ExtendedImage(
+      image: AssetEntityImageProvider(
+        asset,
+        thumbnailSize: const ThumbnailSize(300, 300), // 增加缩略图尺寸
+        isOriginal: false,
       ),
-      child: Image.file(
-        File(widget.file.thumbnailPath ?? widget.file.path),
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        cacheWidth: 300, // 增加缓存尺寸
-        cacheHeight: 300,
-        filterQuality: FilterQuality.medium,
-        errorBuilder: (context, error, stackTrace) {
-          return Center(
-            child: Icon(
-              Icons.broken_image,
-              color: Colors.grey.withAlpha(76),
-              size: 40,
-            ),
-          );
-        },
-      ),
+      fit: BoxFit.cover, // 使用 cover 确保填满
+      enableLoadState: true,
+      loadStateChanged: (state) {
+        switch (state.extendedImageLoadState) {
+          case LoadState.loading:
+            return const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            );
+          case LoadState.failed:
+            return Center(
+              child: Icon(
+                Icons.broken_image,
+                color: Colors.grey.withAlpha(76),
+                size: 40,
+              ),
+            );
+          case LoadState.completed:
+            return ExtendedRawImage(
+              image: state.extendedImageInfo?.image,
+              fit: BoxFit.cover,
+              // 添加过渡动画
+              scale: 1.0,
+              width: double.infinity,
+              height: double.infinity,
+            );
+        }
+      },
     );
   }
 
