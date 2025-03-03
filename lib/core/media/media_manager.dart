@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:intl/intl.dart';
-import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../storage/storage_service.dart';
 
@@ -82,7 +80,6 @@ class MediaManager {
 
   /// 缩略图缓存目录
   late final Directory _thumbnailCacheDir;
-  static const int _thumbnailSize = 200; // 缩略图大小
 
   /// 初始化缩略图缓存目录
   Future<void> init() async {
@@ -166,14 +163,6 @@ class MediaManager {
         final entry = _syncCheckQueue.entries.first;
         final file = entry.value;
 
-        // 检查缩略图
-        if (file.thumbnailPath == null) {
-          final thumbnailPath = await _generateThumbnail(file.path);
-          if (thumbnailPath != null) {
-            file.copyWith(thumbnailPath: thumbnailPath);
-          }
-        }
-
         // 构建远程路径
         final dateStr = DateFormat('yyyy/MM').format(file.modifiedTime);
         final remotePath = '$_remoteBasePath/$dateStr/${file.name}';
@@ -203,44 +192,6 @@ class MediaManager {
 
   // 添加状态变化回调
   void Function(AssetEntityImageInfo file)? onSyncStatusChanged;
-
-  /// 生成缩略图
-  Future<String?> _generateThumbnail(String filePath) async {
-    // 只为图片生成缩略图
-    final extension = path.extension(filePath).toLowerCase().substring(1);
-    if (!_imageExtensions.contains(extension)) {
-      return null;
-    }
-
-    final thumbnailPath = '${_thumbnailCacheDir.path}/${path.basename(filePath)}.thumb.jpg';
-
-    // 如果缩略图已存在，直接返回
-    if (await File(thumbnailPath).exists()) {
-      return thumbnailPath;
-    }
-
-    try {
-      await FlutterImageCompress.compressAndGetFile(
-        filePath,
-        thumbnailPath,
-        minWidth: _thumbnailSize,
-        minHeight: _thumbnailSize,
-        quality: 85,
-      );
-      return thumbnailPath;
-    } catch (e) {
-      print('生成缩略图失败: $filePath, 错误: $e');
-      return null;
-    }
-  }
-
-  /// 清理缩略图缓存
-  Future<void> clearThumbnailCache() async {
-    if (await _thumbnailCacheDir.exists()) {
-      await _thumbnailCacheDir.delete(recursive: true);
-      await _thumbnailCacheDir.create();
-    }
-  }
 
   /// 同步单个文件
   Future<AssetEntityImageInfo> syncFile(AssetEntityImageInfo file) async {
@@ -289,38 +240,4 @@ class MediaManager {
     }
     return results;
   }
-
-  /// 判断文件是否为媒体文件
-  bool _isMediaFile(String extension) {
-    return _imageExtensions.contains(extension) || _videoExtensions.contains(extension);
-  }
-
-  /// 获取媒体类型
-  MediaType _getMediaType(String extension) {
-    if (_imageExtensions.contains(extension)) {
-      return MediaType.image;
-    }
-    return MediaType.video;
-  }
-
-  /// 支持的图片格式
-  static const _imageExtensions = {
-    'jpg',
-    'jpeg',
-    'png',
-    'gif',
-    'webp',
-    'bmp',
-    'heic',
-  };
-
-  /// 支持的视频格式
-  static const _videoExtensions = {
-    'mp4',
-    'mov',
-    'avi',
-    'mkv',
-    'wmv',
-    'm4v',
-  };
 }

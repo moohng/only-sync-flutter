@@ -24,16 +24,43 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
   late ExtendedPageController _pageController;
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
-  int _currentIndex = 0;
   bool _isVideoLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
     _pageController = ExtendedPageController(initialPage: widget.initialIndex);
+
     if (widget.files[widget.initialIndex].type == MediaType.video) {
       _initializeVideoPlayer(widget.files[widget.initialIndex]);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 将预加载移动到这里
+    _preloadImages(widget.initialIndex);
+  }
+
+  void _preloadImages(int currentIndex) {
+    final indexes = [
+      if (currentIndex > 0) currentIndex - 1,
+      currentIndex,
+      if (currentIndex < widget.files.length - 1) currentIndex + 1,
+    ];
+
+    for (final index in indexes) {
+      final file = widget.files[index];
+      if (file.type == MediaType.image) {
+        precacheImage(
+          AssetEntityImageProvider(
+            file.asset,
+            isOriginal: true,
+          ),
+          context,
+        );
+      }
     }
   }
 
@@ -123,8 +150,8 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
         controller: _pageController,
         itemCount: widget.files.length,
         onPageChanged: (index) {
-          setState(() => _currentIndex = index);
           final file = widget.files[index];
+          _preloadImages(index);
           if (file.type == MediaType.video) {
             _initializeVideoPlayer(file);
           } else {
@@ -133,7 +160,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
         },
         itemBuilder: (context, index) {
           final file = widget.files[index];
-          if (file.type == MediaType.video && index == _currentIndex) {
+          if (file.type == MediaType.video) {
             return _buildVideoPreview(file);
           }
           return _buildImagePreview(file);
@@ -197,8 +224,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
               );
             case LoadState.failed:
               return const Center(
-                child:
-                    Icon(Icons.broken_image, color: Colors.white70, size: 64),
+                child: Icon(Icons.broken_image, color: Colors.white70, size: 64),
               );
             case LoadState.completed:
               return null;

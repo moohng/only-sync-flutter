@@ -7,6 +7,9 @@ void main() {
   // 初始化全局状态
   Get.put(AppStore(), permanent: true);
 
+  PaintingBinding.instance.imageCache.maximumSize = 1000;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 500 << 20;
+
   runApp(const MyApp());
 }
 
