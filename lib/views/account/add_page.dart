@@ -5,16 +5,15 @@ import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/storage/storage_service.dart';
 import 'package:only_sync_flutter/views/home/home_page.dart';
 import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AddAccountLogic extends GetxController {
-  final selectedType = 'SMB'.obs;
   final isLoading = false.obs;
   final formKey = GlobalKey<FormState>();
 
   final nameController = TextEditingController();
   final hostController = TextEditingController();
-  final portController = TextEditingController();
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final pathController = TextEditingController();
@@ -34,6 +33,55 @@ class AddAccountLogic extends GetxController {
     }
   }
 
+  // 生成包含账户信息的JSON字符串，用于二维码
+  String generateAccountQRData() {
+    final accountMap = {
+      'type': 'WebDAV',
+      'name': nameController.text,
+      'url': hostController.text,
+      'username': usernameController.text,
+      'password': passwordController.text,
+      'path': pathController.text,
+    };
+    return jsonEncode(accountMap);
+  }
+
+  // 显示二维码对话框
+  void showQRCode(BuildContext context) {
+    if (!formKey.currentState!.validate()) return;
+
+    final qrData = generateAccountQRData();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('账户二维码'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('扫描此二维码可自动添加账户'),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: 200,
+              height: 200,
+              child: QrImageView(
+                data: qrData,
+                version: QrVersions.auto,
+                size: 200.0,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> saveAccount() async {
     if (!formKey.currentState!.validate()) return;
 
@@ -50,9 +98,9 @@ class AddAccountLogic extends GetxController {
         'type': 'WebDAV',
         'name': nameController.text,
         'url': hostController.text,
+        'path': pathController.text,
         'username': usernameController.text,
         'password': passwordController.text,
-        'path': pathController.text,
       };
 
       accounts.add(jsonEncode(accountMap));
@@ -76,33 +124,15 @@ class AddAccountLogic extends GetxController {
   StorageService _createStorageService() {
     final name = nameController.text;
     final host = hostController.text;
-    // final port = int.parse(portController.text);
     final username = usernameController.text;
     final password = passwordController.text;
-    // final path = pathController.text;
+
     return WebDAVService(
       name: name,
       url: host,
       username: username,
       password: password,
     );
-    // return selectedType.value == 'SMB'
-    //     ? SMBService(
-    //         name: name,
-    //         host: host,
-    //         port: port,
-    //         username: username,
-    //         password: password,
-    //         path: path,
-    //       )
-    //     : WebDAVService(
-    //         name: name,
-    //         host: host,
-    //         port: port,
-    //         username: username,
-    //         password: password,
-    //         path: path,
-    //       );
   }
 
   @override
@@ -111,14 +141,14 @@ class AddAccountLogic extends GetxController {
     final accounts = prefs.getStringList('accounts') ?? [];
     try {
       // 转换为Map<String, dynamic>
-      Map<String, dynamic> account = jsonDecode(accounts.last);
-      selectedType.value = account['type'] ?? selectedType.value;
-      nameController.text = account['name'] ?? '';
-      hostController.text = account['url'] ?? '';
-      portController.text = account['port'].toString();
-      usernameController.text = account['username'] ?? '';
-      passwordController.text = account['password'] ?? '';
-      pathController.text = account['path'] ?? '';
+      if (accounts.isNotEmpty) {
+        Map<String, dynamic> account = jsonDecode(accounts.last);
+        nameController.text = account['name'] ?? '';
+        hostController.text = account['url'] ?? '';
+        usernameController.text = account['username'] ?? '';
+        passwordController.text = account['password'] ?? '';
+        pathController.text = account['path'] ?? '';
+      }
     } catch (e) {
       //
     }
@@ -129,7 +159,6 @@ class AddAccountLogic extends GetxController {
   void onClose() {
     nameController.dispose();
     hostController.dispose();
-    portController.dispose();
     usernameController.dispose();
     passwordController.dispose();
     pathController.dispose();
@@ -195,13 +224,12 @@ class AddAccountPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: logic.portController,
+                controller: logic.pathController,
                 decoration: const InputDecoration(
-                  labelText: '端口',
-                  hintText: '请输入端口号',
+                  labelText: '远程路径',
+                  hintText: '可选，例如：/myFolder',
                   border: OutlineInputBorder(),
                 ),
-                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 24),
               const Text('认证信息', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -223,15 +251,6 @@ class AddAccountPage extends StatelessWidget {
                   border: OutlineInputBorder(),
                 ),
                 obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: logic.pathController,
-                decoration: const InputDecoration(
-                  labelText: '远程路径',
-                  hintText: '请输入远程路径（可选）',
-                  border: OutlineInputBorder(),
-                ),
               ),
               const SizedBox(height: 32),
               Row(
@@ -262,6 +281,18 @@ class AddAccountPage extends StatelessWidget {
                         )),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => logic.showQRCode(context),
+                  icon: const Icon(Icons.qr_code),
+                  label: const Text('生成账户二维码'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
               ),
             ],
           ),

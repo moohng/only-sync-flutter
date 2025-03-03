@@ -21,7 +21,7 @@ class MediaPreviewPage extends StatefulWidget {
 }
 
 class _MediaPreviewPageState extends State<MediaPreviewPage> {
-  late PageController _pageController;
+  late ExtendedPageController _pageController;
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   int _currentIndex = 0;
@@ -31,7 +31,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-    _pageController = PageController(initialPage: widget.initialIndex);
+    _pageController = ExtendedPageController(initialPage: widget.initialIndex);
     if (widget.files[widget.initialIndex].type == MediaType.video) {
       _initializeVideoPlayer(widget.files[widget.initialIndex]);
     }
@@ -114,12 +114,12 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black26,
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
       extendBodyBehindAppBar: true,
-      body: PageView.builder(
+      body: ExtendedImageGesturePageView.builder(
         controller: _pageController,
         itemCount: widget.files.length,
         onPageChanged: (index) {
@@ -185,6 +185,9 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
           maxScale: 3.0,
           animationMaxScale: 3.5,
           animationMinScale: 0.8,
+          inPageView: true,
+          cacheGesture: false,
+          initialScale: 1.0,
         ),
         loadStateChanged: (state) {
           switch (state.extendedImageLoadState) {
@@ -194,7 +197,8 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
               );
             case LoadState.failed:
               return const Center(
-                child: Icon(Icons.broken_image, color: Colors.white70, size: 64),
+                child:
+                    Icon(Icons.broken_image, color: Colors.white70, size: 64),
               );
             case LoadState.completed:
               return null;
