@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,6 +18,9 @@ class AddAccountLogic extends GetxController {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final pathController = TextEditingController();
+
+  final isEditMode = false.obs;
+  String? editingId;
 
   Future<void> testConnection() async {
     if (!formKey.currentState!.validate()) return;
@@ -90,11 +94,11 @@ class AddAccountLogic extends GetxController {
       final service = _createStorageService();
       await service.testConnection();
 
-      // 保存账户信息
       final prefs = await SharedPreferences.getInstance();
       final accounts = prefs.getStringList('accounts') ?? [];
 
       final accountMap = {
+        'id': isEditMode.value ? editingId! : const Uuid().v4(),
         'type': 'WebDAV',
         'name': nameController.text,
         'url': hostController.text,
@@ -103,21 +107,73 @@ class AddAccountLogic extends GetxController {
         'password': passwordController.text,
       };
 
-      accounts.add(jsonEncode(accountMap));
-      await prefs.setStringList('accounts', accounts);
+      if (isEditMode.value) {
+        // 更新现有账户
+        final index = accounts.indexWhere((json) {
+          final acc = jsonDecode(json);
+          return acc['id'] == editingId;
+        });
+        if (index != -1) {
+          accounts[index] = jsonEncode(accountMap);
+          await prefs.setStringList('accounts', accounts);
 
-      // 设置为当前活跃账户
-      await prefs.setString('activeAccount', hostController.text);
+          // 如果编辑的是当前活跃账户，更新服务
+          final activeId = prefs.getString('activeAccount');
+          if (editingId == activeId) {
+            await Get.find<HomeLogic>().switchStorageService(accountMap);
+          }
+        }
+      } else {
+        // 添加新账户
+        accounts.add(jsonEncode(accountMap));
+        await prefs.setStringList('accounts', accounts);
+        await prefs.setString('activeAccount', accountMap['id']!);
+        await Get.find<HomeLogic>().switchStorageService(accountMap);
+      }
 
       Get.find<SyncDrawerController>().loadAccounts();
-      // 切换存储服务
-      await Get.find<HomeLogic>().switchStorageService(accountMap);
       Get.back();
-      Get.snackbar('成功', '账户添加成功并已启用');
+      Get.snackbar('成功', isEditMode.value ? '账户已更新' : '账户添加成功并已启用');
     } catch (e) {
       Get.snackbar('错误', '保存失败：$e');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteAccount() async {
+    if (editingId == null) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final accounts = prefs.getStringList('accounts') ?? [];
+
+      // 从列表中移除账户
+      final newAccounts = accounts.where((json) {
+        final acc = jsonDecode(json);
+        return acc['id'] != editingId && acc['url'] != editingId;
+      }).toList();
+
+      await prefs.setStringList('accounts', newAccounts);
+
+      // 如果删除的是当前活跃账户，切换到第一个账户
+      final activeId = prefs.getString('activeAccount');
+      if (editingId == activeId) {
+        if (newAccounts.isNotEmpty) {
+          final firstAcc = jsonDecode(newAccounts.first);
+          await prefs.setString('activeAccount', firstAcc['id']);
+          Get.find<SyncDrawerController>().loadAccounts();
+          await Get.find<HomeLogic>().switchStorageService(firstAcc);
+        } else {
+          await prefs.remove('activeAccount');
+          Get.find<SyncDrawerController>().loadAccounts();
+        }
+      }
+
+      Get.back();
+      Get.snackbar('成功', '账户已删除');
+    } catch (e) {
+      Get.snackbar('错误', '删除失败：$e');
     }
   }
 
@@ -126,31 +182,29 @@ class AddAccountLogic extends GetxController {
     final host = hostController.text;
     final username = usernameController.text;
     final password = passwordController.text;
+    final remoteBasePath = pathController.text;
 
     return WebDAVService(
       name: name,
       url: host,
       username: username,
       password: password,
+      remoteBasePath: remoteBasePath,
     );
   }
 
   @override
   void onInit() async {
-    final prefs = await SharedPreferences.getInstance();
-    final accounts = prefs.getStringList('accounts') ?? [];
-    try {
-      // 转换为Map<String, dynamic>
-      if (accounts.isNotEmpty) {
-        Map<String, dynamic> account = jsonDecode(accounts.last);
-        nameController.text = account['name'] ?? '';
-        hostController.text = account['url'] ?? '';
-        usernameController.text = account['username'] ?? '';
-        passwordController.text = account['password'] ?? '';
-        pathController.text = account['path'] ?? '';
-      }
-    } catch (e) {
-      //
+    // 检查是否传入了账户信息用于编辑
+    final args = Get.arguments;
+    if (args != null && args is Map<String, dynamic>) {
+      isEditMode.value = true;
+      editingId = args['id'] ?? args['url'];
+      nameController.text = args['name'] ?? '';
+      hostController.text = args['url'] ?? '';
+      usernameController.text = args['username'] ?? '';
+      passwordController.text = args['password'] ?? '';
+      pathController.text = args['path'] ?? '';
     }
     super.onInit();
   }
@@ -175,11 +229,44 @@ class AddAccountPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('添加账户'),
+        title: Obx(() => Text(logic.isEditMode.value ? '编辑账户' : '添加账户')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
+        actions: [
+          Obx(() {
+            if (logic.isEditMode.value) {
+              return IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('删除账户'),
+                    content: const Text('确定要删除此账户吗？此操作不可恢复。'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('取消'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          logic.deleteAccount();
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                        child: const Text('删除'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return const SizedBox();
+          }),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -197,12 +284,6 @@ class AddAccountPage extends StatelessWidget {
                   hintText: '请输入账户名称',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '请输入账户名称';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
               TextFormField(

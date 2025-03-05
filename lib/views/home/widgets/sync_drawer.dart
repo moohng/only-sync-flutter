@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:only_sync_flutter/routes/route.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:only_sync_flutter/views/home/home_page.dart';
-import '../../../routes/route.dart';
 
 class AccountInfo {
   const AccountInfo(
@@ -24,7 +24,7 @@ class SyncInfo {
 
 class SyncDrawerController extends GetxController {
   final accounts = <Map<String, dynamic>>[].obs;
-  final selectedAccountUrl = ''.obs; // 改用 URL 作为唯一标识
+  final selectedAccountId = ''.obs; // 改用 URL 作为唯一标识
 
   @override
   void onInit() {
@@ -35,23 +35,23 @@ class SyncDrawerController extends GetxController {
   Future<void> loadAccounts() async {
     final prefs = await SharedPreferences.getInstance();
     final accountsJson = prefs.getStringList('accounts') ?? [];
-    final activeUrl = prefs.getString('activeAccount');
+    final activeId = prefs.getString('activeAccount');
 
     accounts.value = accountsJson.map((e) => jsonDecode(e) as Map<String, dynamic>).toList();
 
     if (accounts.isNotEmpty) {
-      selectedAccountUrl.value = activeUrl ?? accounts.first['url'];
+      selectedAccountId.value = activeId ?? accounts.first['id'];
     }
   }
 
-  Future<void> selectAccount(String url) async {
+  Future<void> selectAccount(String id) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('activeAccount', url);
-      selectedAccountUrl.value = url;
+      await prefs.setString('activeAccount', id);
+      selectedAccountId.value = id;
 
       // 找到对应的账户信息
-      final account = accounts.firstWhere((acc) => acc['url'] == url);
+      final account = accounts.firstWhere((acc) => acc['id'] == id);
       // 切换存储服务
       await Get.find<HomeLogic>().switchStorageService(account);
 
@@ -134,8 +134,8 @@ class SyncDrawer extends StatelessWidget {
                     ...controller.accounts.map((account) => _buildAccountTile(
                           context,
                           account,
-                          isSelected: controller.selectedAccountUrl.value == account['url'],
-                          onTap: () => controller.selectAccount(account['url']),
+                          isSelected: controller.selectedAccountId.value == account['id'],
+                          onTap: () => controller.selectAccount(account['id']),
                         )),
                     const Divider(),
                     ListTile(
@@ -156,22 +156,60 @@ class SyncDrawer extends StatelessWidget {
 
   Widget _buildAccountTile(BuildContext context, Map<String, dynamic> account,
       {bool isSelected = false, VoidCallback? onTap}) {
-    return ListTile(
-      leading: Icon(
-        Icons.cloud,
-        color: isSelected ? Theme.of(context).primaryColor : null,
-      ),
-      title: Text(
-        account['name'] ?? '未命名账户',
-        style: TextStyle(
-          color: isSelected ? Theme.of(context).primaryColor : null,
-          fontWeight: isSelected ? FontWeight.bold : null,
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      elevation: isSelected ? 2 : 0,
+      color: isSelected ? theme.colorScheme.primaryContainer.withOpacity(0.3) : null,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              Icon(
+                Icons.cloud,
+                color: isSelected ? theme.primaryColor : theme.iconTheme.color,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      account['name']?.isEmpty ? '未命名账户' : account['name'],
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : null,
+                        color: isSelected ? theme.primaryColor : null,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      account['url'] ?? '',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected) ...[
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => Get.toNamed(
+                    Routes.addAccountPage,
+                    arguments: account,
+                  ),
+                ),
+                Icon(Icons.check, color: theme.primaryColor),
+              ],
+            ],
+          ),
         ),
       ),
-      subtitle: Text(account['url'] ?? ''),
-      selected: isSelected,
-      onTap: onTap,
-      trailing: isSelected ? Icon(Icons.check, color: Theme.of(context).primaryColor) : null,
     );
   }
 }

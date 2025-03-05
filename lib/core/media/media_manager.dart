@@ -63,19 +63,15 @@ class AssetEntityImageInfo {
 /// 媒体管理器，负责扫描和管理本地媒体文件
 class MediaManager {
   RemoteStorageService? _storageService;
-  String? _remoteBasePath;
   bool _hasPermission = false;
   final _syncCheckQueue = <String, AssetEntityImageInfo>{};
   bool _isCheckingSync = false;
 
-  MediaManager({RemoteStorageService? storageService, String? remoteBasePath = '/only_sync'})
-      : _storageService = storageService,
-        _remoteBasePath = remoteBasePath;
+  MediaManager({RemoteStorageService? storageService}) : _storageService = storageService;
 
   // 添加更新存储服务的方法
-  void updateStorageService(RemoteStorageService? service, {String? remoteBasePath}) {
+  void updateStorageService(RemoteStorageService? service) {
     _storageService = service;
-    _remoteBasePath = remoteBasePath ?? _remoteBasePath;
   }
 
   /// 缩略图缓存目录
@@ -165,7 +161,7 @@ class MediaManager {
 
         // 构建远程路径
         final dateStr = DateFormat('yyyy/MM').format(file.modifiedTime);
-        final remotePath = '$_remoteBasePath/$dateStr/${file.name}';
+        final remotePath = '$dateStr/${file.name}';
 
         final exists = await _storageService!.checkFileExists(remotePath);
         if (exists) {
@@ -195,7 +191,7 @@ class MediaManager {
 
   /// 同步单个文件
   Future<AssetEntityImageInfo> syncFile(AssetEntityImageInfo file) async {
-    if (_storageService == null || _remoteBasePath == null) {
+    if (_storageService == null) {
       return file.copyWith(
         syncStatus: SyncStatus.failed,
         syncError: '存储服务未初始化',
@@ -205,7 +201,7 @@ class MediaManager {
     try {
       // 创建按年月组织的远程路径
       final dateStr = DateFormat('yyyy/MM').format(file.modifiedTime);
-      final remotePath = '$_remoteBasePath/$dateStr/${file.name}';
+      final remotePath = '$dateStr/${file.name}';
 
       // 检查文件是否已经同步
       if (await _storageService!.checkFileExists(remotePath)) {

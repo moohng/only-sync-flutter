@@ -26,33 +26,40 @@ class HomeLogic extends GetxController {
     final prefs = await SharedPreferences.getInstance();
     final accounts = prefs.getStringList('accounts') ?? [];
     if (accounts.isEmpty) return;
-    final activeUrl = prefs.getString('activeAccount');
+
+    final activeId = prefs.getString('activeAccount');
 
     try {
       final accountList = accounts.map((e) => jsonDecode(e) as Map<String, dynamic>);
       Map<String, dynamic>? activeAccount;
-      if (activeUrl != null && activeUrl.isNotEmpty) {
-        activeAccount = accountList.firstWhere((acc) => acc['url'] == activeUrl);
-      }
-      if (activeAccount == null) {
+
+      if (activeId != null && activeId.isNotEmpty) {
+        activeAccount = accountList.firstWhere(
+          (acc) => acc['id'] == activeId,
+          orElse: () {
+            // 如果找不到对应ID的账户，使用第一个账户并更新activeId
+            final firstAccount = accountList.first;
+            prefs.setString('activeAccount', firstAccount['id']);
+            return firstAccount;
+          },
+        );
+      } else if (accountList.isNotEmpty) {
+        // 如果没有activeId但有账户，使用第一个账户
         activeAccount = accountList.first;
-        prefs.setString('activeAccount', activeAccount['url']);
+        prefs.setString('activeAccount', activeAccount['id']);
       }
 
-      if (activeAccount.isNotEmpty) {
+      if (activeAccount != null) {
         activeService = WebDAVService(
           name: activeAccount['name'],
           url: activeAccount['url'],
           username: activeAccount['username'] ?? '',
           password: activeAccount['password'] ?? '',
+          remoteBasePath: activeAccount['path'] ?? '',
         );
 
-        // 检查服务可用性
         await _checkServiceAvailability();
-
-        // 确保 MediaGridController 已经初始化
         await Get.putAsync(() async => MediaGridController());
-        // 更新存储服务
         Get.find<MediaGridController>()
             .updateStorageService(activeService, isAvailable: AppStore.to.isServiceAvailable.value);
       }
@@ -76,7 +83,7 @@ class HomeLogic extends GetxController {
     }
   }
 
-  // 添加切换存储服务的方法
+  // 修改切换存储服务的方法
   Future<void> switchStorageService(Map<String, dynamic> account) async {
     try {
       activeService = WebDAVService(
@@ -84,6 +91,7 @@ class HomeLogic extends GetxController {
         url: account['url'],
         username: account['username'] ?? '',
         password: account['password'] ?? '',
+        remoteBasePath: account['path'] ?? '',
       );
 
       await _checkServiceAvailability();
