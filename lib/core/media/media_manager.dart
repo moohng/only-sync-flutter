@@ -62,18 +62,18 @@ class AssetEntityImageInfo {
 
 /// 媒体管理器，负责扫描和管理本地媒体文件
 class MediaManager {
-  StorageService? _storageService;
+  RemoteStorageService? _storageService;
   String? _remoteBasePath;
   bool _hasPermission = false;
   final _syncCheckQueue = <String, AssetEntityImageInfo>{};
   bool _isCheckingSync = false;
 
-  MediaManager({StorageService? storageService, String? remoteBasePath = '/only_sync'})
+  MediaManager({RemoteStorageService? storageService, String? remoteBasePath = '/only_sync'})
       : _storageService = storageService,
         _remoteBasePath = remoteBasePath;
 
   // 添加更新存储服务的方法
-  void updateStorageService(StorageService? service, {String? remoteBasePath}) {
+  void updateStorageService(RemoteStorageService? service, {String? remoteBasePath}) {
     _storageService = service;
     _remoteBasePath = remoteBasePath ?? _remoteBasePath;
   }

@@ -57,7 +57,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
     super.onClose();
   }
 
-  void updateStorageService(StorageService? service, {bool isAvailable = true}) {
+  void updateStorageService(RemoteStorageService? service, {bool isAvailable = true}) {
     _mediaManager.updateStorageService(service);
     isServiceAvailable.value = isAvailable;
   }

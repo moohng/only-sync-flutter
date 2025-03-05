@@ -121,7 +121,7 @@ class AddAccountLogic extends GetxController {
     }
   }
 
-  StorageService _createStorageService() {
+  RemoteStorageService _createStorageService() {
     final name = nameController.text;
     final host = hostController.text;
     final username = usernameController.text;

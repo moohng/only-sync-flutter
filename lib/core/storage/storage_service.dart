@@ -1,17 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:webdav_client/webdav_client.dart' show newClient, Client;
-import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 
-abstract class StorageService {
+abstract class RemoteStorageService {
   Future<void> testConnection();
   Future<void> saveAccount();
   Future<void> uploadFile(String localPath, String remotePath);
   Future<bool> checkFileExists(String remotePath);
 }
 
-class WebDAVService extends StorageService {
+class WebDAVService extends RemoteStorageService {
   final String name;
   final String url;
   final String username;
@@ -65,10 +64,6 @@ class WebDAVService extends StorageService {
     }
 
     try {
-      // 确保远程目录存在
-      final dir = path.dirname(remotePath);
-      await _createDirectory(dir);
-
       // 上传文件
       await client.writeFromFile(localPath, remotePath);
     } catch (e) {

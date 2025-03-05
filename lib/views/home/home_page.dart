@@ -10,13 +10,11 @@ import 'package:only_sync_flutter/core/storage/storage_service.dart';
 
 class HomeLogic extends GetxController {
   var pageIndex = 0.obs;
-  var hasRemoteConfig = false.obs;
   WebDAVService? activeService;
 
   @override
   void onInit() {
     super.onInit();
-    checkRemoteConfig();
     _initStorageService();
   }
 
@@ -24,23 +22,22 @@ class HomeLogic extends GetxController {
     pageIndex.value = index;
   }
 
-  Future<void> checkRemoteConfig() async {
-    final prefs = await SharedPreferences.getInstance();
-    final accounts = prefs.getStringList('accounts') ?? [];
-    hasRemoteConfig.value = accounts.isNotEmpty;
-  }
-
   Future<void> _initStorageService() async {
     final prefs = await SharedPreferences.getInstance();
     final accounts = prefs.getStringList('accounts') ?? [];
+    if (accounts.isEmpty) return;
     final activeUrl = prefs.getString('activeAccount');
 
-    if (accounts.isEmpty || activeUrl == null) return;
-
     try {
-      final activeAccount = accounts
-          .map((e) => jsonDecode(e) as Map<String, dynamic>)
-          .firstWhere((acc) => acc['url'] == activeUrl, orElse: () => {});
+      final accountList = accounts.map((e) => jsonDecode(e) as Map<String, dynamic>);
+      Map<String, dynamic>? activeAccount;
+      if (activeUrl != null && activeUrl.isNotEmpty) {
+        activeAccount = accountList.firstWhere((acc) => acc['url'] == activeUrl);
+      }
+      if (activeAccount == null) {
+        activeAccount = accountList.first;
+        prefs.setString('activeAccount', activeAccount['url']);
+      }
 
       if (activeAccount.isNotEmpty) {
         activeService = WebDAVService(
