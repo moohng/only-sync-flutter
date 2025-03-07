@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/store/app_store.dart';
+import 'package:only_sync_flutter/routes/route.dart';
 import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
 import 'package:only_sync_flutter/views/home/widgets/media_grid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -147,6 +148,46 @@ class HomePage extends StatelessWidget {
                   },
                 )
               : const SizedBox()),
+          PopupMenuButton(
+            icon: const Icon(Icons.add),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'scan',
+                child: Row(
+                  children: [
+                    Icon(Icons.qr_code_scanner),
+                    SizedBox(width: 8),
+                    Text('扫码添加'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'manual',
+                child: Row(
+                  children: [
+                    Icon(Icons.add_circle_outline),
+                    SizedBox(width: 8),
+                    Text('手动添加'),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) async {
+              if (value == 'scan') {
+                final scanResult = await Get.toNamed(Routes.scanPage);
+                if (scanResult != null) {
+                  try {
+                    final accountData = json.decode(scanResult as String);
+                    Get.toNamed(Routes.addSyncPage, arguments: accountData);
+                  } catch (e) {
+                    Get.snackbar('错误', '无效的二维码数据');
+                  }
+                }
+              } else if (value == 'manual') {
+                Get.toNamed(Routes.addSyncPage);
+              }
+            },
+          ),
         ],
       ),
       drawer: const SyncDrawer(),

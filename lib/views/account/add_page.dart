@@ -195,16 +195,26 @@ class AddAccountLogic extends GetxController {
 
   @override
   void onInit() async {
-    // 检查是否传入了账户信息用于编辑
+    // 检查是否传入了账户信息用于编辑或从二维码填充
     final args = Get.arguments;
     if (args != null && args is Map<String, dynamic>) {
-      isEditMode.value = true;
-      editingId = args['id'] ?? args['url'];
-      nameController.text = args['name'] ?? '';
-      hostController.text = args['url'] ?? '';
-      usernameController.text = args['username'] ?? '';
-      passwordController.text = args['password'] ?? '';
-      pathController.text = args['path'] ?? '';
+      // 如果没有 id，说明是从二维码来的数据
+      if (!args.containsKey('id')) {
+        nameController.text = args['name'] ?? '';
+        hostController.text = args['url'] ?? '';
+        usernameController.text = args['username'] ?? '';
+        passwordController.text = args['password'] ?? '';
+        pathController.text = args['path'] ?? '';
+      } else {
+        // 编辑模式
+        isEditMode.value = true;
+        editingId = args['id'];
+        nameController.text = args['name'] ?? '';
+        hostController.text = args['url'] ?? '';
+        usernameController.text = args['username'] ?? '';
+        passwordController.text = args['password'] ?? '';
+        pathController.text = args['path'] ?? '';
+      }
     }
     super.onInit();
   }
