@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:only_sync_flutter/core/media/thumbnail_cache.dart';
 import 'package:path_provider/path_provider.dart';
@@ -303,12 +304,6 @@ class MediaManager {
     _isSyncing = false;
   }
 
-  // 添加到同步队列
-  void addToSyncQueue(AssetEntityImageInfo file) {
-    _syncQueue[file.path] = file;
-    _startBackgroundSync();
-  }
-
   // 生成缩略图
   Future<void> _startThumbnailGeneration() async {
     if (_isGeneratingThumbnails || _thumbnailQueue.isEmpty) return;
@@ -362,4 +357,45 @@ class MediaManager {
     _thumbnailQueue[file.path] = file;
     _startThumbnailGeneration();
   }
+
+  // 保存每个相册的任务状态
+  final _albumTasks = <String, Set<String>>{};
+
+  void cancelTasks(String albumId) {
+    if (_albumTasks.containsKey(albumId)) {
+      // 取消该相册的所有同步任务
+      final tasks = _albumTasks[albumId] ?? {};
+      for (final taskId in tasks) {
+        _syncQueue.removeWhere((key, value) => value.asset.id == taskId);
+      }
+      _albumTasks.remove(albumId);
+    }
+  }
+
+  Future<void> addToSyncQueue(AssetEntityImageInfo file) async {
+    // 生成任务ID
+    final taskId = '${file.asset.id}_${DateTime.now().millisecondsSinceEpoch}';
+
+    // 记录任务到相册
+    final albumId = file.asset.relativePath ?? 'default';
+    _albumTasks.putIfAbsent(albumId, () => {}).add(taskId);
+
+    // 添加到同步队列
+    _syncQueue.putIfAbsent(file.path, () => file);
+
+    // _syncQueue[file.path] = file;
+    _startBackgroundSync();
+  }
+}
+
+class SyncTask {
+  final String id;
+  final AssetEntityImageInfo file;
+  final VoidCallback? onComplete;
+
+  SyncTask({
+    required this.id,
+    required this.file,
+    this.onComplete,
+  });
 }

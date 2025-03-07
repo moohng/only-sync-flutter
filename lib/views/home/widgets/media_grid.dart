@@ -7,6 +7,19 @@ import 'package:intl/intl.dart';
 import 'package:only_sync_flutter/views/home/widgets/media_grid_item.dart';
 import 'package:photo_manager/photo_manager.dart';
 
+// 记录当前相册的加载状态
+class AlbumState {
+  final List<AssetEntityImageInfo> files;
+  final int currentPage;
+  final bool hasMore;
+
+  AlbumState({
+    required this.files,
+    this.currentPage = 0,
+    this.hasMore = true,
+  });
+}
+
 class MediaGridController extends GetxController with GetTickerProviderStateMixin {
   static const int pageSize = 30;
 
@@ -29,6 +42,12 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   final isFirstLoad = true.obs;
   final isInitializing = true.obs;
   final isServiceAvailable = true.obs;
+
+  // 添加相册状态缓存
+  final albumStates = <String, AlbumState>{}.obs;
+
+  // 用于取消后台任务的标记
+  String? currentAlbumId;
 
   @override
   void onInit() {
@@ -53,6 +72,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
 
   @override
   void onClose() {
+    cancelCurrentTasks();
     fadeController.dispose();
     super.onClose();
   }
@@ -123,9 +143,17 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   @override
   Future<void> refresh() async {
     if (isLoading.value) return;
+
+    // 取消当前任务
+    cancelCurrentTasks();
+
+    // 清除当前相册的缓存状态
+    if (selectedAlbum.value != null) {
+      albumStates.remove(selectedAlbum.value!.id);
+    }
+
     page.value = 0;
     hasMore.value = true;
-    // isInitializing.value = true;
     await loadNextBatch();
   }
 
@@ -184,12 +212,37 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
         ));
   }
 
-  void selectAlbum(AssetPathEntity album) {
+  Future<void> selectAlbum(AssetPathEntity album) async {
     if (selectedAlbum.value?.id != album.id) {
+      // 取消当前相册的后台任务
+      cancelCurrentTasks();
+
+      // 保存当前相册状态
+      if (selectedAlbum.value != null) {
+        albumStates[selectedAlbum.value!.id] = AlbumState(
+          files: mediaFiles.toList(),
+          currentPage: page.value,
+          hasMore: hasMore.value,
+        );
+      }
+
       selectedAlbum.value = album;
-      mediaFiles.clear();
-      isInitializing.value = true;
-      refresh();
+      currentAlbumId = album.id;
+
+      // 恢复相册状态或重新加载
+      if (albumStates.containsKey(album.id)) {
+        final state = albumStates[album.id]!;
+        mediaFiles.value = state.files;
+        page.value = state.currentPage;
+        hasMore.value = state.hasMore;
+        isInitializing.value = false;
+      } else {
+        mediaFiles.clear();
+        page.value = 0;
+        hasMore.value = true;
+        isInitializing.value = true;
+        await loadNextBatch();
+      }
     }
   }
 
@@ -200,6 +253,12 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
       if (file != null) {
         precacheImage(FileImage(file), Get.context!);
       }
+    }
+  }
+
+  void cancelCurrentTasks() {
+    if (currentAlbumId != null) {
+      _mediaManager.cancelTasks(currentAlbumId!);
     }
   }
 }

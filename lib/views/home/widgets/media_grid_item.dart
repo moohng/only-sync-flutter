@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:only_sync_flutter/core/store/app_store.dart';
-import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 
 class MediaGridItem extends StatefulWidget {
