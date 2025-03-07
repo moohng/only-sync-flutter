@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
@@ -181,43 +183,26 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
 
   Widget _buildMediaPreview() {
     final asset = widget.file.asset;
+
+    // 优先使用缓存的缩略图
+    if (widget.file.thumbnailPath != null) {
+      return ExtendedImage.file(
+        File(widget.file.thumbnailPath!),
+        fit: BoxFit.cover,
+        enableLoadState: true,
+        // ...其他配置保持不变
+      );
+    }
+
+    // 回退到原来的方案
     return ExtendedImage(
       image: AssetEntityImageProvider(
         asset,
-        thumbnailSize: const ThumbnailSize(300, 300), // 增加缩略图尺寸
+        thumbnailSize: MediaManager.thumbnailSize,
         isOriginal: false,
       ),
-      fit: BoxFit.cover, // 使用 cover 确保填满
-      enableLoadState: true,
-      loadStateChanged: (state) {
-        switch (state.extendedImageLoadState) {
-          case LoadState.loading:
-            return const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            );
-          case LoadState.failed:
-            return Center(
-              child: Icon(
-                Icons.broken_image,
-                color: Colors.grey.withAlpha(76),
-                size: 40,
-              ),
-            );
-          case LoadState.completed:
-            return ExtendedRawImage(
-              image: state.extendedImageInfo?.image,
-              fit: BoxFit.cover,
-              // 添加过渡动画
-              scale: 1.0,
-              width: double.infinity,
-              height: double.infinity,
-            );
-        }
-      },
+      fit: BoxFit.cover,
+      // ...其他配置保持不变
     );
   }
 

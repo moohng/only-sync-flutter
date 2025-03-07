@@ -131,38 +131,18 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
 
   Future<void> syncFile(AssetEntityImageInfo file) async {
     if (!isServiceAvailable.value) {
-      Get.snackbar(
-        '同步失败',
-        '存储服务不可用，请检查网络连接或服务配置',
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-      );
+      Get.snackbar('同步失败', '存储服务不可用，请检查网络连接或服务配置');
       return;
     }
 
     final index = mediaFiles.indexWhere((f) => f.path == file.path);
     if (index == -1) return;
 
-    try {
-      // 更新状态为同步中
-      mediaFiles[index] = mediaFiles[index].copyWith(syncStatus: SyncStatus.syncing);
+    // 更新状态为同步中
+    mediaFiles[index] = mediaFiles[index].copyWith(syncStatus: SyncStatus.syncing);
 
-      // 等待一小段时间以显示动画
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      final result = await _mediaManager.syncFile(file);
-      mediaFiles[index] = result;
-
-      if (result.syncStatus == SyncStatus.failed) {
-        Get.snackbar('同步失败', result.syncError ?? '未知错误');
-      }
-    } catch (e) {
-      mediaFiles[index] = mediaFiles[index].copyWith(
-        syncStatus: SyncStatus.failed,
-        syncError: e.toString(),
-      );
-      Get.snackbar('同步失败', e.toString());
-    }
+    // 添加到后台同步队列
+    _mediaManager.addToSyncQueue(file);
   }
 
   Future<void> syncAll() async {

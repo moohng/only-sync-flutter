@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:only_sync_flutter/core/media/thumbnail_cache.dart';
 import 'package:only_sync_flutter/core/store/app_store.dart';
 import 'package:only_sync_flutter/routes/route.dart';
 
@@ -28,6 +29,10 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: Routes.homePage,
       getPages: Routes.getPages(),
+      onDispose: () async {
+        // 清理过期的缩略图缓存
+        await ThumbnailCache().clearCache();
+      },
     );
   }
 }
