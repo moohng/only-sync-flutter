@@ -2,9 +2,11 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:only_sync_flutter/core/media/thumbnail_cache.dart';
+import 'package:only_sync_flutter/core/store/sync_status_store.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../storage/storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// 媒体文件类型
 enum MediaType { image, video }
@@ -64,6 +66,7 @@ class AssetEntityImageInfo {
 
 /// 媒体管理器，负责扫描和管理本地媒体文件
 class MediaManager {
+  final SyncStatusStore _syncStore = SyncStatusStore();
   RemoteStorageService? _storageService;
   bool _hasPermission = false;
   final _syncCheckQueue = <String, AssetEntityImageInfo>{};
@@ -74,6 +77,12 @@ class MediaManager {
   // 添加更新存储服务的方法
   void updateStorageService(RemoteStorageService? service) {
     _storageService = service;
+    // 切换账户时更新同步状态存储
+    if (service != null) {
+      _syncStore.switchAccount(service.id!);
+    } else {
+      _syncStore.clear();
+    }
   }
 
   /// 缩略图缓存目录
@@ -90,6 +99,9 @@ class MediaManager {
       await _thumbnailCacheDir.create(recursive: true);
     }
     await _thumbnailCache.init();
+    final prefs = await SharedPreferences.getInstance();
+    final activeId = prefs.getString('activeAccount');
+    await _syncStore.init(activeId);
   }
 
   /// 请求权限
@@ -156,7 +168,7 @@ class MediaManager {
           size: file.lengthSync(),
           modifiedTime: asset.modifiedDateTime,
           createdTime: asset.createDateTime,
-          syncStatus: SyncStatus.notSynced,
+          syncStatus: _syncStore.getStatus(file.path),
           remotePath: null,
           thumbnailPath: thumbnailPath,
         );

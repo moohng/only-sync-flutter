@@ -52,6 +52,7 @@ class HomeLogic extends GetxController {
 
       if (activeAccount != null) {
         activeService = WebDAVService(
+          id: activeAccount['id'],
           name: activeAccount['name'],
           url: activeAccount['url'],
           username: activeAccount['username'] ?? '',
@@ -88,6 +89,7 @@ class HomeLogic extends GetxController {
   Future<void> switchStorageService(Map<String, dynamic> account) async {
     try {
       activeService = WebDAVService(
+        id: account['id'],
         name: account['name'],
         url: account['url'],
         username: account['username'] ?? '',
@@ -96,8 +98,11 @@ class HomeLogic extends GetxController {
       );
 
       await _checkServiceAvailability();
-      Get.find<MediaGridController>()
-          .updateStorageService(activeService, isAvailable: AppStore.to.isServiceAvailable.value);
+      // 更新同步状态存储
+      final mediaController = Get.find<MediaGridController>();
+      mediaController.updateStorageService(activeService, isAvailable: AppStore.to.isServiceAvailable.value);
+      // 刷新媒体网格以显示新的同步状态
+      mediaController.refresh();
     } catch (e) {
       AppStore.to.updateServiceStatus(false);
       print('切换存储服务失败: $e');

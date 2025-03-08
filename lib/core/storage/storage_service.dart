@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 abstract class RemoteStorageService {
+  late String? id;
   Future<void> testConnection();
   Future<void> saveAccount();
   Future<void> uploadFile(String localPath, String remotePath);
@@ -25,8 +26,10 @@ class WebDAVService extends RemoteStorageService {
     required this.url,
     required this.username,
     required this.password,
+    String? id,
     String? remoteBasePath,
   }) {
+    super.id = id;
     client = newClient(
       url,
       user: username,
