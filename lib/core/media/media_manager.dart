@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:intl/intl.dart';
+import 'package:only_sync_flutter/core/database/media_dao.dart';
 import 'package:only_sync_flutter/core/media/thumbnail_cache.dart';
 import 'package:only_sync_flutter/core/store/sync_status_store.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum MediaType { image, video }
 
 /// 同步状态
-enum SyncStatus { notSynced, syncing, synced, failed }
+enum SyncStatus { notSynced, willSync, syncing, synced, failed }
 
 /// 媒体文件信息
 class AssetEntityImageInfo {
@@ -66,6 +67,7 @@ class AssetEntityImageInfo {
 
 /// 媒体管理器，负责扫描和管理本地媒体文件
 class MediaManager {
+  final MediaDao _mediaDao = MediaDao();
   final SyncStatusStore _syncStore = SyncStatusStore();
   RemoteStorageService? _storageService;
   bool _hasPermission = false;
@@ -150,27 +152,46 @@ class MediaManager {
     int pageSize = 30,
   }) async {
     try {
+      // 调试数据库表结构
+      await _mediaDao.dbHelper.debugCheckTable();
+
       final assets = await album.getAssetListPaged(page: page, size: pageSize);
+      print('获取到 ${assets.length} 个媒体文件');
+
       final List<AssetEntityImageInfo> mediaFiles = [];
+      final List<String> paths = [];
+      final Map<String, AssetEntity> assetMap = {};
 
       for (final asset in assets) {
         final file = await asset.file;
         if (file == null) continue;
+        paths.add(file.path);
+        assetMap[file.path] = asset;
+      }
 
-        // 获取或生成缩略图
-        final thumbnailPath = await _generateAndCacheThumbnail(asset);
+      // 批量查询数据库
+      final cachedInfoMap = await _mediaDao.batchGetFileInfo(paths, _storageService?.id);
+
+      for (final path in paths) {
+        final asset = assetMap[path]!;
+        final file = await asset.file;
+
+        if (cachedInfoMap.containsKey(path)) {
+          mediaFiles.add(cachedInfoMap[path]!.toAssetEntityImageInfo(asset: asset));
+          continue;
+        }
 
         final mediaFile = AssetEntityImageInfo(
           asset: asset,
-          path: file.path,
+          path: file!.path,
           name: asset.title ?? 'Unknown',
           type: asset.type == AssetType.video ? MediaType.video : MediaType.image,
           size: file.lengthSync(),
           modifiedTime: asset.modifiedDateTime,
           createdTime: asset.createDateTime,
-          syncStatus: _syncStore.getStatus(file.path),
+          syncStatus: SyncStatus.notSynced,
           remotePath: null,
-          thumbnailPath: thumbnailPath,
+          thumbnailPath: null,
         );
 
         mediaFiles.add(mediaFile);
@@ -180,11 +201,18 @@ class MediaManager {
           addToThumbnailQueue(mediaFile);
         }
         // 添加到同步检查队列
-        _queueSyncCheck(mediaFile);
+        // _queueSyncCheck(mediaFile);
+      }
+
+      // 批量保存新记录
+      if (mediaFiles.isNotEmpty) {
+        await Future.wait(mediaFiles
+            .where((f) => !cachedInfoMap.containsKey(f.path))
+            .map((f) => _mediaDao.insertOrUpdate(f, _storageService?.id)));
       }
 
       // 开始后台处理
-      _startSyncCheck();
+      // _startSyncCheck();
       _startThumbnailGeneration();
 
       return mediaFiles;
@@ -276,15 +304,6 @@ class MediaManager {
     }
   }
 
-  /// 同步多个文件
-  Future<List<AssetEntityImageInfo>> syncFiles(List<AssetEntityImageInfo> files) async {
-    final results = <AssetEntityImageInfo>[];
-    for (final file in files) {
-      results.add(await syncFile(file));
-    }
-    return results;
-  }
-
   final _syncQueue = <String, AssetEntityImageInfo>{};
   final _thumbnailQueue = <String, AssetEntityImageInfo>{};
   bool _isSyncing = false;
@@ -300,10 +319,19 @@ class MediaManager {
         final entry = _syncQueue.entries.first;
         final file = entry.value;
 
+        onSyncStatusChanged?.call(file.copyWith(syncStatus: SyncStatus.syncing));
         final result = await syncFile(file);
+        await _mediaDao.updateSyncStatus(
+          file.path,
+          result.syncStatus,
+          result.syncError,
+          result.remotePath,
+        );
         onSyncStatusChanged?.call(result);
 
-        _syncQueue.remove(entry.key);
+        if (result.syncStatus == SyncStatus.synced) {
+          _syncQueue.remove(entry.key);
+        }
         // 添加延迟避免占用过多资源
         await Future.delayed(const Duration(milliseconds: 100));
       } catch (e) {
@@ -328,6 +356,7 @@ class MediaManager {
 
         final thumbnailFile = await _generateThumbnail(file);
         if (thumbnailFile != null) {
+          await _mediaDao.updateThumbnailPath(file.path, thumbnailFile.path);
           onSyncStatusChanged?.call(file.copyWith(thumbnailPath: thumbnailFile.path));
         }
 
@@ -370,32 +399,12 @@ class MediaManager {
     _startThumbnailGeneration();
   }
 
-  // 保存每个相册的任务状态
-  final _albumTasks = <String, Set<String>>{};
-
-  void cancelTasks(String albumId) {
-    if (_albumTasks.containsKey(albumId)) {
-      // 取消该相册的所有同步任务
-      final tasks = _albumTasks[albumId] ?? {};
-      for (final taskId in tasks) {
-        _syncQueue.removeWhere((key, value) => value.asset.id == taskId);
-      }
-      _albumTasks.remove(albumId);
-    }
-  }
-
   Future<void> addToSyncQueue(AssetEntityImageInfo file) async {
-    // 生成任务ID
-    final taskId = '${file.asset.id}_${DateTime.now().millisecondsSinceEpoch}';
-
-    // 记录任务到相册
-    final albumId = file.asset.relativePath ?? 'default';
-    _albumTasks.putIfAbsent(albumId, () => {}).add(taskId);
+    onSyncStatusChanged?.call(file.copyWith(syncStatus: SyncStatus.willSync));
 
     // 添加到同步队列
     _syncQueue.putIfAbsent(file.path, () => file);
 
-    // _syncQueue[file.path] = file;
     _startBackgroundSync();
   }
 }

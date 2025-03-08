@@ -209,6 +209,8 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
     switch (status) {
       case SyncStatus.notSynced:
         return Colors.grey;
+      case SyncStatus.willSync:
+        return Colors.orange;
       case SyncStatus.syncing:
         return Colors.blue;
       case SyncStatus.synced:
@@ -222,6 +224,8 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
     switch (status) {
       case SyncStatus.notSynced:
         return Icons.cloud_upload_outlined;
+      case SyncStatus.willSync:
+        return Icons.cloud_upload;
       case SyncStatus.syncing:
         return Icons.sync;
       case SyncStatus.synced:

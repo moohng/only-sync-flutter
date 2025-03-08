@@ -149,7 +149,7 @@ class HomePage extends StatelessWidget {
                   onPressed: () {
                     // 全部同步
                     final controller = Get.find<MediaGridController>();
-                    controller.syncAll();
+                    controller.addSelectAlbumFiles();
                   },
                 )
               : const SizedBox()),
