@@ -27,36 +27,34 @@ class _ScanPageState extends State<ScanPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('扫描二维码'),
-        // actions: [
-        //   IconButton(
-        //     icon: ValueListenableBuilder(
-        //       valueListenable: controller.torchState,
-        //       builder: (context, state, child) {
-        //         switch (state) {
-        //           case TorchState.off:
-        //             return const Icon(Icons.flash_off);
-        //           case TorchState.on:
-        //             return const Icon(Icons.flash_on);
-        //         }
-        //       },
-        //     ),
-        //     onPressed: () => controller.toggleTorch(),
-        //   ),
-        //   IconButton(
-        //     icon: ValueListenableBuilder(
-        //       valueListenable: controller.cameraFacingState,
-        //       builder: (context, state, child) {
-        //         switch (state) {
-        //           case CameraFacing.front:
-        //             return const Icon(Icons.camera_front);
-        //           case CameraFacing.back:
-        //             return const Icon(Icons.camera_rear);
-        //         }
-        //       },
-        //     ),
-        //     onPressed: () => controller.switchCamera(),
-        //   ),
-        // ],
+        actions: [
+          IconButton(
+            icon: ValueListenableBuilder(
+              valueListenable: controller,
+              builder: (context, state, child) {
+                if (state.torchState == TorchState.on) {
+                  return const Icon(Icons.flash_on);
+                }
+                return const Icon(Icons.flash_off);
+              },
+            ),
+            onPressed: () => controller.toggleTorch(),
+          ),
+          IconButton(
+            icon: ValueListenableBuilder(
+              valueListenable: controller,
+              builder: (context, state, child) {
+                switch (state.cameraDirection) {
+                  case CameraFacing.front:
+                    return const Icon(Icons.camera_front);
+                  default:
+                    return const Icon(Icons.camera_rear);
+                }
+              },
+            ),
+            onPressed: () => controller.switchCamera(),
+          ),
+        ],
       ),
       body: Stack(
         children: [
