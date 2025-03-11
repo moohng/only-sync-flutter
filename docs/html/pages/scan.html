@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-black h-full">
+    <div class="ios-status-bar text-white">
+        <span>9:41</span>
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+
+    <div class="flex flex-col h-full pt-12">
+        <div class="p-4 flex justify-between items-center">
+            <button class="text-white p-2 rounded-full hover:bg-white/10 transition-colors" onclick="history.back()">
+                <i class="fas fa-times"></i>
+            </button>
+            <span class="text-white font-medium">扫描二维码</span>
+            <button class="text-white p-2 rounded-full hover:bg-white/10 transition-colors">
+                <i class="fas fa-images"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 flex items-center justify-center p-8">
+            <!-- 扫码框 -->
+            <div class="relative w-72 h-72">
+                <div class="absolute inset-0 border-2 border-white/30 rounded overflow-hidden">
+                    <div class="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
+                </div>
+                <div class="absolute -inset-0.5 [mask-image:linear-gradient(black_0px,transparent_1px)_,linear-gradient(to_right,black_0px,transparent_1px)]" style="mask-size: 8px 8px">
+                    <div class="absolute inset-0.5 border-2 border-blue-400/50 rounded"></div>
+                </div>
+                <!-- 角标 -->
+                <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-blue-400 rounded-tl"></div>
+                <div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-blue-400 rounded-tr"></div>
+                <div class="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-blue-400 rounded-bl"></div>
+                <div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-blue-400 rounded-br"></div>
+                <!-- 扫描线动画 -->
+                <div class="absolute top-0 left-6 right-6 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-scan"></div>
+                    <div class="absolute -top-4 left-0 right-0 h-4 bg-gradient-to-b from-blue-400/0 to-blue-400/10"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8 text-center">
+            <p class="text-white text-opacity-70 mb-4">将二维码放入框内即可自动扫描</p>
+            <button class="text-white text-opacity-50 text-sm hover:text-white transition-colors">
+              <i class="fas fa-lightbulb mr-1"></i>
+              打开闪光灯
+            </button>
+        </div>
+    </div>
+
+    <style>
+        @keyframes scan {
+            from { transform: translateY(0); }
+            to { transform: translateY(288px); }
+        }
+        .animate-scan {
+            animation: scan 2s ease-in-out infinite;
+        }
+    </style>
+</body>
+</html>

@@ -18,11 +18,21 @@
     </div>
     
     <div class="p-4 pt-12"> <!-- 添加顶部内边距以避免内容被状态栏遮挡 -->
-        <div class="flex items-center mb-4">
-            <a href="settings.html" class="text-blue-500">
-                <i class="fas fa-chevron-left"></i> 返回
-            </a>
-            <h1 class="text-2xl font-bold ml-4">WebDAV 配置</h1>
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center">
+                <a href="settings.html" class="text-blue-500">
+                    <i class="fas fa-chevron-left"></i> 返回
+                </a>
+                <h1 class="text-2xl font-bold ml-4">WebDAV 配置</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="scanQRCode()" class="text-blue-500 hover:bg-blue-50 p-2 rounded-full transition-colors">
+                    <i class="fas fa-camera"></i>
+                </button>
+                <button onclick="showQRCode()" class="text-blue-500 hover:bg-blue-50 p-2 rounded-full transition-colors">
+                    <i class="fas fa-qrcode"></i>
+                </button>
+            </div>
         </div>
         
         <div class="bg-white rounded-lg p-4 space-y-4">
@@ -71,6 +81,46 @@
                 </p>
             </div>
         </div>
+
+        <!-- 二维码弹窗 -->
+        <div class="fixed inset-0 bg-black/70 hidden items-center justify-center backdrop-blur-sm" id="qrcode-dialog">
+            <div class="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+                <div class="text-center mb-4">
+                    <h3 class="text-lg font-semibold mb-1">分享配置</h3>
+                    <p class="text-sm text-gray-500">扫描二维码快速配置 WebDAV</p>
+                </div>
+                <div class="bg-gray-50 p-6 rounded-xl mb-6">
+                    <!-- 使用占位图片模拟二维码 -->
+                    <div class="aspect-square bg-white rounded-lg shadow-inner flex items-center justify-center">
+                        <i class="fas fa-qrcode text-7xl text-gray-300"></i>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button class="flex-1 py-2.5 border border-gray-200 rounded-lg text-gray-600" onclick="hideQRCode()">
+                        关闭
+                    </button>
+                    <button class="flex-1 py-2.5 bg-blue-500 text-white rounded-lg">
+                        保存图片
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script>
+        function showQRCode() {
+            document.getElementById('qrcode-dialog').classList.remove('hidden');
+            document.getElementById('qrcode-dialog').classList.add('flex');
+        }
+
+        function hideQRCode() {
+            document.getElementById('qrcode-dialog').classList.add('hidden');
+            document.getElementById('qrcode-dialog').classList.remove('flex');
+        }
+
+        function scanQRCode() {
+            window.location.href = 'scan.html';
+        }
+    </script>
 </body>
 </html>

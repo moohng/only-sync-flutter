@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="../css/styles.css" rel="stylesheet" />
+  </head>
+  <body class="bg-white h-full">
+    <div class="ios-status-bar text-black">
+      <span>9:41</span>
+      <div class="flex items-center space-x-2">
+        <i class="fas fa-signal"></i>
+        <i class="fas fa-wifi"></i>
+        <i class="fas fa-battery-full"></i>
+      </div>
+    </div>
+
+    <div class="flex flex-col h-full pt-12">
+      <div class="flex justify-between items-center p-4">
+        <h1 class="text-2xl font-bold">同步状态</h1>
+      </div>
+
+      <div class="flex-1 flex items-center justify-center p-4">
+        <div class="text-center">
+          <div class="bg-gray-50 rounded-2xl p-8 max-w-sm mx-auto mb-4">
+            <i class="fas fa-cloud text-gray-300 text-5xl mb-4"></i>
+            <h3 class="text-lg font-semibold mb-2">开始同步您的照片</h3>
+            <p class="text-gray-500 text-sm mb-6">请配置 WebDAV 服务以开始自动同步您的照片到云端</p>
+            <div class="space-y-3">
+              <a href="scan.html" class="block bg-blue-500 text-white px-6 py-2 rounded-lg">
+                <i class="fas fa-qrcode mr-2"></i>扫码配置
+              </a>
+              <a href="webdav.html" class="block border border-blue-500 text-blue-500 px-6 py-2 rounded-lg">
+                <i class="fas fa-pencil-alt mr-2"></i>手动配置
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav-bar">
+        <a href="home.html" class="nav-item">
+          <i class="fas fa-images mb-1"></i>
+          <span>相册</span>
+        </a>
+        <a href="sync.html" class="nav-item active">
+          <i class="fas fa-sync mb-1"></i>
+          <span>同步</span>
+        </a>
+        <a href="settings.html" class="nav-item">
+          <i class="fas fa-cog mb-1"></i>
+          <span>设置</span>
+        </a>
+      </nav>
+    </div>
+  </body>
+</html>

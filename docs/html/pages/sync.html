@@ -17,41 +17,146 @@
         </div>
     </div>
     
-    <div class="p-4 pt-12"> <!-- 添加顶部内边距以避免内容被状态栏遮挡 -->
-        <h1 class="text-2xl font-bold mb-4">同步状态</h1>
-        
-        <div class="bg-blue-50 rounded-lg p-4 mb-4">
-            <div class="flex justify-between items-center mb-2">
-                <span class="font-semibold">正在同步</span>
-                <span class="text-blue-500">75%</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-blue-500 h-2 rounded-full" style="width: 75%"></div>
-            </div>
-            <div class="text-sm text-gray-500 mt-2">
-                已同步 750/1000 张照片
+    <div class="p-4 pt-12 h-full">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-bold">同步状态</h1>
+            <a href="webdav_browser.html" class="text-blue-500">
+                <i class="fas fa-cloud text-xl"></i>
+            </a>
+        </div>
+
+        <!-- 未配置状态 -->
+        <div class="flex-1 flex flex-col items-center justify-center text-center" id="empty-state">
+            <div class="bg-gray-50 rounded-2xl p-8 max-w-sm mx-auto mb-4">
+                <i class="fas fa-cloud text-gray-300 text-5xl mb-4"></i>
+                <h3 class="text-lg font-semibold mb-2">开始同步您的照片</h3>
+                <p class="text-gray-500 text-sm mb-4">请先配置 WebDAV 服务以开始自动同步您的照片到云端</p>
+                <a href="webdav.html" class="inline-block bg-blue-500 text-white px-6 py-2 rounded-lg">
+                    配置 WebDAV
+                </a>
             </div>
         </div>
-        
-        <div class="space-y-4">
-            <div class="border rounded-lg p-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold">上次同步时间</h3>
-                        <p class="text-sm text-gray-500">2023-10-01 15:30</p>
+
+        <!-- 同步任务列表 -->
+        <div class="space-y-4" id="sync-tasks">
+            <!-- 进行中的同步任务 -->
+            <div class="bg-blue-50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-camera text-blue-500"></i>
+                        <span class="font-medium">相机胶卷</span>
                     </div>
-                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    <button class="text-gray-400 relative" onclick="toggleTaskMenu('camera-task')">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <!-- 任务操作菜单 -->
+                    <div class="hidden absolute right-4 mt-8 w-36 bg-white rounded-lg shadow-lg border py-1 z-50" id="camera-task-menu">
+                        <button onclick="pauseTask('camera-task')" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
+                            <i class="fas fa-pause mr-2"></i>暂停同步
+                        </button>
+                        <button onclick="deleteTask('camera-task')" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 text-red-500">
+                            <i class="fas fa-trash mr-2"></i>删除任务
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-600">正在同步</span>
+                    <span class="text-blue-500">75%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-500 h-2 rounded-full" style="width: 75%"></div>
+                </div>
+                <div class="text-xs text-gray-500 mt-2">
+                    已同步 750/1000 张照片
                 </div>
             </div>
-            
-            <div class="border rounded-lg p-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="font-semibold">同步空间使用</h3>
-                        <p class="text-sm text-gray-500">已使用 2.5GB / 10GB</p>
+
+            <!-- 已暂停的同步任务 -->
+            <div class="bg-white border rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-heart text-red-500"></i>
+                        <span class="font-medium">我的收藏</span>
                     </div>
-                    <i class="fas fa-cloud text-blue-500 text-xl"></i>
+                    <button class="text-gray-400 relative" onclick="toggleTaskMenu('favorite-task')">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <!-- 任务操作菜单 -->
+                    <div class="hidden absolute right-4 mt-8 w-36 bg-white rounded-lg shadow-lg border py-1 z-50" id="favorite-task-menu">
+                        <button onclick="resumeTask('favorite-task')" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
+                            <i class="fas fa-play mr-2"></i>继续同步
+                        </button>
+                        <button onclick="deleteTask('favorite-task')" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 text-red-500">
+                            <i class="fas fa-trash mr-2"></i>删除任务
+                        </button>
+                    </div>
                 </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-500">已暂停 - 已同步 42/156 张照片</span>
+                    <button class="text-blue-500" onclick="resumeTask('favorite-task')">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 删除确认弹窗 -->
+        <div class="fixed inset-0 bg-black/50 hidden items-center justify-center backdrop-blur-sm" id="delete-confirm">
+            <div class="bg-white rounded-lg p-6 mx-4 w-full max-w-sm">
+                <h3 class="text-lg font-semibold mb-2">删除同步任务</h3>
+                <p class="text-gray-500 text-sm mb-6">
+                    删除任务将停止同步，但不会删除已同步的照片。确定要删除吗？
+                </p>
+                <div class="flex space-x-3">
+                    <button class="flex-1 py-2 border border-gray-200 rounded-lg text-gray-600" onclick="hideDeleteConfirm()">
+                        取消
+                    </button>
+                    <button class="flex-1 py-2 bg-red-500 text-white rounded-lg" onclick="confirmDelete()">
+                        删除
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加任务的浮动按钮 -->
+        <button onclick="showTaskDialog()" 
+                class="fixed right-4 bottom-20 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center">
+            <i class="fas fa-plus text-xl"></i>
+        </button>
+
+        <!-- 添加同步任务的弹窗 -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 hidden" id="task-dialog">
+            <div class="bg-white rounded-t-xl fixed bottom-0 left-0 right-0 p-4 safe-area-bottom">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">添加同步任务</h3>
+                    <button class="text-gray-400" onclick="hideTaskDialog()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <button class="w-full flex items-center space-x-3 p-4 border rounded-lg">
+                        <i class="fas fa-camera text-blue-500"></i>
+                        <div class="flex-1 text-left">
+                            <div class="font-medium">相机胶卷</div>
+                            <div class="text-sm text-gray-500">同步所有相机拍摄的照片</div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-300"></i>
+                    </button>
+                    <button class="w-full flex items-center space-x-3 p-4 border rounded-lg">
+                        <i class="fas fa-folder text-yellow-500"></i>
+                        <div class="flex-1 text-left">
+                            <div class="font-medium">选择相册</div>
+                            <div class="text-sm text-gray-500">选择一个或多个相册进行同步</div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-300"></i>
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <button class="w-full bg-blue-500 text-white py-3 rounded-lg font-medium">
+                        确定
+                    </button>
+                </div>
+                <div class="h-8"></div>
             </div>
         </div>
     </div>
@@ -70,5 +175,71 @@
             <span>设置</span>
         </a>
     </nav>
+
+    <script>
+        function showTaskDialog() {
+            document.getElementById('task-dialog').classList.remove('hidden');
+        }
+
+        function hideTaskDialog() {
+            document.getElementById('task-dialog').classList.add('hidden');
+        }
+
+        // 根据是否已配置来显示不同的内容
+        const hasConfig = true; // 这里应该根据实际状态判断
+        document.getElementById('empty-state').style.display = hasConfig ? 'none' : 'flex';
+        document.getElementById('sync-tasks').style.display = hasConfig ? 'block' : 'none';
+
+        let currentTaskId = null;
+
+        function toggleTaskMenu(taskId) {
+            // 关闭其他菜单
+            document.querySelectorAll('[id$="-task-menu"]').forEach(menu => {
+                if (menu.id !== `${taskId}-menu`) {
+                    menu.classList.add('hidden');
+                }
+            });
+            
+            const menu = document.getElementById(`${taskId}-menu`);
+            menu.classList.toggle('hidden');
+        }
+
+        function pauseTask(taskId) {
+            // 实现暂停逻辑
+            toggleTaskMenu(taskId);
+        }
+
+        function resumeTask(taskId) {
+            // 实现继续逻辑
+            toggleTaskMenu(taskId);
+        }
+
+        function deleteTask(taskId) {
+            currentTaskId = taskId;
+            toggleTaskMenu(taskId);
+            document.getElementById('delete-confirm').classList.remove('hidden');
+            document.getElementById('delete-confirm').classList.add('flex');
+        }
+
+        function hideDeleteConfirm() {
+            document.getElementById('delete-confirm').classList.add('hidden');
+            document.getElementById('delete-confirm').classList.remove('flex');
+        }
+
+        function confirmDelete() {
+            // 实现删除逻辑
+            hideDeleteConfirm();
+            currentTaskId = null;
+        }
+
+        // 点击外部关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.text-gray-400')) {
+                document.querySelectorAll('[id$="-task-menu"]').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
