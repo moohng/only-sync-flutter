@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 h-full">
+    <div class="ios-status-bar text-black">
+        <span>9:41</span>
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+    
+    <div class="p-4 pt-12"> <!-- 添加顶部内边距以避免内容被状态栏遮挡 -->
+        <div class="flex items-center mb-4">
+            <a href="settings.html" class="text-blue-500">
+                <i class="fas fa-chevron-left"></i> 返回
+            </a>
+            <h1 class="text-2xl font-bold ml-4">WebDAV 配置</h1>
+        </div>
+        
+        <div class="bg-white rounded-lg p-4 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">服务器地址</label>
+                <input type="text" 
+                       placeholder="https://example.com/webdav" 
+                       class="w-full p-2 border rounded-md">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                <input type="text" 
+                       placeholder="请输入用户名" 
+                       class="w-full p-2 border rounded-md">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                <input type="password" 
+                       placeholder="请输入密码" 
+                       class="w-full p-2 border rounded-md">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">同步目录</label>
+                <input type="text" 
+                       placeholder="/photos" 
+                       class="w-full p-2 border rounded-md">
+            </div>
+            
+            <button class="w-full bg-blue-500 text-white py-2 rounded-md">
+                测试连接
+            </button>
+            
+            <button class="w-full bg-green-500 text-white py-2 rounded-md">
+                保存配置
+            </button>
+        </div>
+        
+        <div class="mt-4 p-4 bg-yellow-50 rounded-lg">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-yellow-500 mt-1 mr-2"></i>
+                <p class="text-sm text-gray-600">
+                    请确保您的 WebDAV 服务器支持 HTTPS 连接，并且服务器证书有效。建议使用强密码保护您的账户安全。
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

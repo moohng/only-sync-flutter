@@ -1,0 +1,96 @@
+.prototype-container {
+    background: #1a1a1a;
+    border-radius: 3rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    overflow: hidden;
+    padding: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 手机"刘海" */
+.prototype-container::before {
+    content: '';
+    position: absolute;
+    width: 148px;
+    height: 28px;
+    background: #000;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    z-index: 100;
+}
+
+/* 电源按钮 */
+.prototype-container::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 80px;
+    background: rgba(255,255,255,0.1);
+    right: -8px;
+    top: 120px;
+    border-radius: 4px;
+}
+
+/* 音量按钮 */
+.volume-buttons {
+    position: absolute;
+    width: 4px;
+    height: 120px;
+    background: rgba(255,255,255,0.1);
+    left: -8px;
+    top: 120px;
+    border-radius: 4px;
+}
+
+.prototype-frame {
+    width: 390px; /* iPhone 15 Pro width */
+    height: 844px; /* iPhone 15 Pro height */
+    border: none;
+    border-radius: 44px;
+    position: relative;
+    background: white;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.05);
+}
+
+.ios-status-bar {
+    height: 44px; /* iOS 状态栏高度 */
+    background: transparent;
+    font-size: 0.875rem; /* iOS 状态栏字体大小 */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 50;
+}
+
+.nav-bar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5rem 0;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #4b5563;
+}
+
+.nav-item.active {
+    color: #3b82f6;
+}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-white h-full">
+    <div class="ios-status-bar text-black">
+        <span>9:41</span>
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+    
+    <div class="p-4 pt-12"> <!-- 添加顶部内边距以避免内容被状态栏遮挡 -->
+        <h1 class="text-2xl font-bold mb-4">同步状态</h1>
+        
+        <div class="bg-blue-50 rounded-lg p-4 mb-4">
+            <div class="flex justify-between items-center mb-2">
+                <span class="font-semibold">正在同步</span>
+                <span class="text-blue-500">75%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-blue-500 h-2 rounded-full" style="width: 75%"></div>
+            </div>
+            <div class="text-sm text-gray-500 mt-2">
+                已同步 750/1000 张照片
+            </div>
+        </div>
+        
+        <div class="space-y-4">
+            <div class="border rounded-lg p-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-semibold">上次同步时间</h3>
+                        <p class="text-sm text-gray-500">2023-10-01 15:30</p>
+                    </div>
+                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                </div>
+            </div>
+            
+            <div class="border rounded-lg p-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-semibold">同步空间使用</h3>
+                        <p class="text-sm text-gray-500">已使用 2.5GB / 10GB</p>
+                    </div>
+                    <i class="fas fa-cloud text-blue-500 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="nav-bar">
+        <a href="home.html" class="nav-item">
+            <i class="fas fa-images mb-1"></i>
+            <span>相册</span>
+        </a>
+        <a href="sync.html" class="nav-item active">
+            <i class="fas fa-sync mb-1"></i>
+            <span>同步</span>
+        </a>
+        <a href="settings.html" class="nav-item">
+            <i class="fas fa-cog mb-1"></i>
+            <span>设置</span>
+        </a>
+    </nav>
+</body>
+</html>
