@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/store/app_store.dart';
-import 'package:only_sync_flutter/routes/route.dart';
-import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
 import 'package:only_sync_flutter/views/home/widgets/media_grid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:only_sync_flutter/core/storage/storage_service.dart';
@@ -118,19 +116,9 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final homeLogic = Get.put(HomeLogic());
 
-    return GetBuilder<SyncDrawerController>(
-      init: SyncDrawerController(),
-      builder: (drawerController) {
-        return _buildMainScaffold(homeLogic, drawerController);
-      },
-    );
-  }
-
-  Widget _buildMainScaffold(HomeLogic homeLogic, SyncDrawerController drawerController) {
     return Scaffold(
-      key: Get.nestedKey(1), // 添加唯一的key
+      key: Get.nestedKey(1),
       appBar: AppBar(
-        forceMaterialTransparency: true,
         title: Obx(() => Row(
               children: [
                 Text(homeLogic.activeService?.name ?? 'Only Sync'),
@@ -143,59 +131,15 @@ class HomePage extends StatelessWidget {
               ],
             )),
         actions: [
-          Obx(() => AppStore.to.isServiceAvailable.value
-              ? IconButton(
-                  icon: const Icon(Icons.sync),
-                  onPressed: () {
-                    // 全部同步
-                    final controller = Get.find<MediaGridController>();
-                    controller.addSelectAlbumFiles();
-                  },
-                )
-              : const SizedBox()),
-          PopupMenuButton(
-            icon: const Icon(Icons.add),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'scan',
-                child: Row(
-                  children: [
-                    Icon(Icons.qr_code_scanner),
-                    SizedBox(width: 8),
-                    Text('扫码添加'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'manual',
-                child: Row(
-                  children: [
-                    Icon(Icons.add_circle_outline),
-                    SizedBox(width: 8),
-                    Text('手动添加'),
-                  ],
-                ),
-              ),
-            ],
-            onSelected: (value) async {
-              if (value == 'scan') {
-                final scanResult = await Get.toNamed(Routes.scanPage);
-                if (scanResult != null) {
-                  try {
-                    final accountData = json.decode(scanResult as String);
-                    Get.toNamed(Routes.addSyncPage, arguments: accountData);
-                  } catch (e) {
-                    Get.snackbar('错误', '无效的二维码数据');
-                  }
-                }
-              } else if (value == 'manual') {
-                Get.toNamed(Routes.addSyncPage);
-              }
+          IconButton(
+            icon: const Icon(Icons.sync),
+            onPressed: () {
+              final controller = Get.find<MediaGridController>();
+              controller.addSelectAlbumFiles();
             },
           ),
         ],
       ),
-      drawer: const SyncDrawer(),
       body: const MediaGrid(),
     );
   }

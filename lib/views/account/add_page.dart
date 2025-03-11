@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:only_sync_flutter/routes/route.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:flutter/material.dart';
@@ -236,158 +237,226 @@ class AddAccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final logic = Get.put(AddAccountLogic());
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Obx(() => Text(logic.isEditMode.value ? '编辑账户' : '添加账户')),
+        title: Obx(() => Text(logic.isEditMode.value ? '编辑账户' : 'WebDAV 配置')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         actions: [
-          Obx(() {
-            if (logic.isEditMode.value) {
-              return IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('删除账户'),
-                    content: const Text('确定要删除此账户吗？此操作不可恢复。'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('取消'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          logic.deleteAccount();
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                        child: const Text('删除'),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-            return const SizedBox();
-          }),
+          IconButton(
+            icon: const Icon(Icons.camera_alt),
+            onPressed: () => Get.toNamed(Routes.scanPage),
+          ),
+          IconButton(
+            icon: const Icon(Icons.qr_code),
+            onPressed: () => logic.showQRCode(context),
+          ),
+          if (logic.isEditMode.value)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _showDeleteConfirm(context, logic),
+            ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: Form(
           key: logic.formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('服务信息', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: logic.nameController,
-                decoration: const InputDecoration(
-                  labelText: 'WebDAV 服务名称',
-                  hintText: '请输入账户名称',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: logic.hostController,
-                decoration: const InputDecoration(
-                  labelText: 'WebDAV 地址',
-                  hintText: '例如：https://dav.example.com',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '请输入 WebDAV 地址';
-                  }
-                  if (!value.startsWith('http')) {
-                    return '请输入正确的 URL 地址';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: logic.pathController,
-                decoration: const InputDecoration(
-                  labelText: '远程路径',
-                  hintText: '可选，例如：/myFolder',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text('认证信息', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: logic.usernameController,
-                decoration: const InputDecoration(
-                  labelText: '用户名',
-                  hintText: '请输入用户名（可选）',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: logic.passwordController,
-                decoration: const InputDecoration(
-                  labelText: '密码',
-                  hintText: '请输入密码（可选）',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 32),
-              Row(
+              _buildFormGroup(
+                theme,
+                title: '服务器信息',
                 children: [
-                  Expanded(
-                    child: Obx(() => FilledButton(
-                          onPressed: logic.isLoading.value ? null : logic.testConnection,
-                          child: logic.isLoading.value
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Text('测试连接'),
-                        )),
+                  _buildTextField(
+                    controller: logic.hostController,
+                    label: '服务器地址',
+                    hint: 'https://example.com/webdav',
+                    icon: Icons.link,
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) return '请输入服务器地址';
+                      if (!value!.startsWith('http')) return '请输入正确的URL地址';
+                      return null;
+                    },
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Obx(() => FilledButton(
-                          onPressed: logic.isLoading.value ? null : logic.saveAccount,
-                          child: logic.isLoading.value
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Text('保存'),
-                        )),
+                  _buildTextField(
+                    controller: logic.pathController,
+                    label: '同步目录',
+                    hint: '/photos',
+                    icon: Icons.folder_outlined,
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => logic.showQRCode(context),
-                  icon: const Icon(Icons.qr_code),
-                  label: const Text('生成账户二维码'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
+              _buildFormGroup(
+                theme,
+                title: '认证信息',
+                children: [
+                  _buildTextField(
+                    controller: logic.usernameController,
+                    label: '用户名',
+                    hint: '请输入用户名（可选）',
+                    icon: Icons.person_outline,
                   ),
+                  _buildTextField(
+                    controller: logic.passwordController,
+                    label: '密码',
+                    hint: '请输入密码（可选）',
+                    icon: Icons.lock_outline,
+                    obscureText: true,
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: logic.testConnection,
+                      icon: const Icon(Icons.wifi_tethering),
+                      label: const Text('测试连接'),
+                    ),
+                    const SizedBox(height: 8),
+                    FilledButton.icon(
+                      onPressed: logic.saveAccount,
+                      icon: const Icon(Icons.save),
+                      label: const Text('保存配置'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: theme.colorScheme.secondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              _buildTipCard(theme),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFormGroup(
+    ThemeData theme, {
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.secondary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 1,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Column(
+            children: List.generate(
+              children.length * 2 - 1,
+              (index) {
+                if (index.isOdd) {
+                  return const Divider(height: 1, indent: 56);
+                }
+                return children[index ~/ 2];
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      validator: validator,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon),
+        labelText: label,
+        hintText: hint,
+        border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
+  Widget _buildTipCard(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: theme.colorScheme.secondary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '请确保您的 WebDAV 服务器支持 HTTPS 协议，并使用有效的证书。数据传输过程中涉及的敏感信息将被加密。',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirm(BuildContext context, AddAccountLogic logic) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('删除账户'),
+        content: const Text('确定要删除此账户吗？此操作不可恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              logic.deleteAccount();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
       ),
     );
   }

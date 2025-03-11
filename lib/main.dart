@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/media/thumbnail_cache.dart';
 import 'package:only_sync_flutter/core/store/app_store.dart';
 import 'package:only_sync_flutter/routes/route.dart';
+import 'package:only_sync_flutter/views/home/home_page.dart';
+import 'package:only_sync_flutter/views/settings/settings_page.dart';
+import 'package:only_sync_flutter/views/sync/sync_page.dart';
 
 void main() {
   // 初始化全局状态
@@ -26,8 +29,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey.shade200),
         useMaterial3: true,
+        cardColor: Colors.white,
+        dividerColor: const Color.fromARGB(255, 229, 231, 235),
+        scaffoldBackgroundColor: const Color.fromARGB(255, 242, 244, 246),
       ),
-      initialRoute: Routes.homePage,
+      home: const MainPage(),
       getPages: Routes.getPages(),
       onDispose: () async {
         // 清理过期的缩略图缓存
@@ -35,4 +41,50 @@ class MyApp extends StatelessWidget {
       },
     );
   }
+}
+
+class MainPage extends StatelessWidget {
+  const MainPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.put(MainController());
+
+    return Scaffold(
+      body: Obx(() => IndexedStack(
+            index: controller.tabIndex.value,
+            children: const [
+              HomePage(),
+              SyncPage(),
+              SettingsPage(),
+            ],
+          )),
+      bottomNavigationBar: Obx(() => NavigationBar(
+            selectedIndex: controller.tabIndex.value,
+            onDestinationSelected: controller.changeTabIndex,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.photo_album_outlined),
+                selectedIcon: Icon(Icons.photo_album),
+                label: '相册',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.sync_outlined),
+                selectedIcon: Icon(Icons.sync),
+                label: '同步',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.settings_outlined),
+                selectedIcon: Icon(Icons.settings),
+                label: '设置',
+              ),
+            ],
+          )),
+    );
+  }
+}
+
+class MainController extends GetxController {
+  var tabIndex = 0.obs;
+  void changeTabIndex(int index) => tabIndex.value = index;
 }
