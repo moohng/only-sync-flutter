@@ -54,7 +54,7 @@
             <div class="p-4 border-b">
                 <h2 class="font-medium text-gray-800">同步策略</h2>
             </div>
-            <div class="flex items-center justify-between p-4 border-b">
+            <div class="flex items-center justify-between p-4 border-b hover:bg-gray-50 transition-all">
                 <div class="flex items-center">
                     <i class="fas fa-wifi text-green-500 w-8"></i>
                     <span>仅 Wi-Fi 下同步</span>
@@ -117,5 +117,30 @@
             <span>设置</span>
         </a>
     </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 为所有开关添加点击事件
+            const switches = document.querySelectorAll('.relative.inline-block.w-12.h-6');
+            switches.forEach(switchEl => {
+                switchEl.addEventListener('click', function() {
+                    const indicator = this.querySelector('div');
+                    if (this.classList.contains('bg-green-500')) {
+                        // 关闭
+                        this.classList.remove('bg-green-500');
+                        this.classList.add('bg-gray-300');
+                        indicator.classList.remove('right-1');
+                        indicator.classList.add('left-1');
+                    } else {
+                        // 开启
+                        this.classList.remove('bg-gray-300');
+                        this.classList.add('bg-green-500');
+                        indicator.classList.remove('left-1');
+                        indicator.classList.add('right-1');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

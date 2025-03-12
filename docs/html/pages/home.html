@@ -22,10 +22,13 @@
         <div class="p-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold">相册</h1>
             <div class="flex space-x-4">
+                <a href="ai_search.html" class="text-blue-500">
+                    <i class="fas fa-search"></i>
+                </a>
                 <button class="text-blue-500" id="selectBtn" onclick="toggleSelectMode()">
                     选择
                 </button>
-                <button class="text-blue-500">
+                <button class="text-blue-500" onclick="showOptionsMenu()">
                     <i class="fas fa-ellipsis-h"></i>
                 </button>
             </div>
@@ -33,33 +36,33 @@
 
         <!-- 相册选择栏 -->
         <div class="px-4 mb-2">
-            <div class="flex space-x-4 overflow-x-auto pb-2">
-                <button class="px-4 py-2 rounded-full bg-blue-500 text-white flex items-center whitespace-nowrap">
+            <div class="flex space-x-4 overflow-x-auto pb-2 hide-scrollbar">
+                <button class="px-4 py-2 rounded-full bg-blue-500 text-white flex items-center whitespace-nowrap btn-hover">
                     <i class="fas fa-images mr-2"></i>
                     所有照片
                 </button>
-                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap btn-hover">
                     <i class="fas fa-heart mr-2"></i>
                     收藏
                 </button>
-                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap btn-hover">
                     <i class="fas fa-camera mr-2"></i>
                     相机胶卷
                 </button>
-                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap btn-hover">
                     <i class="fas fa-download mr-2"></i>
                     下载
                 </button>
-                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap btn-hover">
                     <i class="fas fa-tag mr-2"></i>风景
                 </button>
-                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap btn-hover">
                     <i class="fas fa-tag mr-2"></i>人物
                 </button>
-                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap btn-hover">
                     <i class="fas fa-tag mr-2"></i>美食
                 </button>
-                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap btn-hover">
                     <i class="fas fa-plus mr-2"></i>添加标签
                 </button>
             </div>
@@ -71,13 +74,13 @@
             <div class="px-4 mb-4">
                 <h2 class="text-lg font-semibold mb-2">2023年12月</h2>
                 <div class="grid grid-cols-3 gap-1">
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
                         <img src="https://picsum.photos/seed/1/300/300" class="w-full h-full object-cover">
                     </div>
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
                         <img src="https://picsum.photos/seed/2/300/300" class="w-full h-full object-cover">
                     </div>
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
                         <img src="https://picsum.photos/seed/3/300/300" class="w-full h-full object-cover">
                     </div>
                 </div>
@@ -87,19 +90,19 @@
             <div class="px-4 mb-4">
                 <h2 class="text-lg font-semibold mb-2">2023年11月</h2>
                 <div class="grid grid-cols-3 gap-1">
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
                         <img src="https://picsum.photos/seed/4/300/300" class="w-full h-full object-cover">
                     </div>
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
                         <img src="https://picsum.photos/seed/5/300/300" class="w-full h-full object-cover">
                     </div>
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
                         <img src="https://picsum.photos/seed/6/300/300" class="w-full h-full object-cover">
                     </div>
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
                         <img src="https://picsum.photos/seed/5/300/300" class="w-full h-full object-cover">
                     </div>
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
                         <img src="https://picsum.photos/seed/6/300/300" class="w-full h-full object-cover">
                     </div>
                 </div>
@@ -158,6 +161,20 @@
             selectedItems = document.querySelectorAll('.selected').length;
             document.getElementById('selectedCount').innerText = selectedItems;
         }
+
+        // 为所有照片添加点击事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const photoElements = document.querySelectorAll('.aspect-square');
+            photoElements.forEach(photo => {
+                photo.addEventListener('click', function() {
+                    if (!selectMode) {
+                        window.location.href = 'detail.html';
+                    } else {
+                        toggleSelectItem(this);
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>

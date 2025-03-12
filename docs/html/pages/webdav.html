@@ -40,7 +40,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">服务器地址</label>
                 <input type="text" 
                        placeholder="https://example.com/webdav" 
-                       class="w-full p-2 border rounded-md">
+                       class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300 focus:border-blue-500 transition-all">
             </div>
             
             <div>
@@ -64,7 +64,7 @@
                        class="w-full p-2 border rounded-md">
             </div>
             
-            <button class="w-full bg-blue-500 text-white py-2 rounded-md">
+            <button class="w-full bg-blue-500 text-white py-2 rounded-md btn-hover">
                 测试连接
             </button>
             
@@ -121,6 +121,61 @@
         function scanQRCode() {
             window.location.href = 'scan.html';
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('.bg-white.rounded-lg');
+            const testButton = form.querySelector('button:nth-child(5)');
+            const saveButton = form.querySelector('button:nth-child(6)');
+            
+            testButton.addEventListener('click', function() {
+                // 显示测试连接中状态
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 测试中...';
+                this.disabled = true;
+                
+                // 模拟测试连接
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fas fa-check mr-2"></i> 连接成功';
+                    this.classList.remove('bg-blue-500');
+                    this.classList.add('bg-green-500');
+                    
+                    // 恢复原始状态
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.classList.remove('bg-green-500');
+                        this.classList.add('bg-blue-500');
+                        this.disabled = false;
+                    }, 2000);
+                }, 1500);
+            });
+            
+            saveButton.addEventListener('click', function() {
+                // 简单表单验证
+                const inputs = form.querySelectorAll('input');
+                let isValid = true;
+                
+                inputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        input.classList.add('border-red-500');
+                        isValid = false;
+                    } else {
+                        input.classList.remove('border-red-500');
+                    }
+                });
+                
+                if (isValid) {
+                    // 显示保存中状态
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 保存中...';
+                    
+                    // 模拟保存配置
+                    setTimeout(() => {
+                        // 跳转到同步页面
+                        window.location.href = 'sync.html';
+                    }, 1000);
+                }
+            });
+        });
     </script>
 </body>
 </html>
