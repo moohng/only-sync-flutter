@@ -39,10 +39,16 @@
 
         <!-- 同步任务列表 -->
         <div class="space-y-4" id="sync-tasks">
+            <!-- 添加拖拽提示 -->
+            <div class="text-center text-sm text-gray-500 mb-2">
+                <i class="fas fa-arrows-alt-v mr-1"></i>长按并拖动可调整任务优先级
+            </div>
+            
             <!-- 进行中的同步任务 -->
-            <div class="bg-blue-50 rounded-lg p-4">
+            <div class="bg-blue-50 rounded-lg p-4" draggable="true">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center space-x-2">
+                        <i class="fas fa-grip-lines text-gray-400 mr-2"></i>
                         <i class="fas fa-camera text-blue-500"></i>
                         <span class="font-medium">相机胶卷</span>
                     </div>
@@ -239,6 +245,41 @@
                     menu.classList.add('hidden');
                 });
             }
+        });
+
+        // 添加拖拽排序功能
+        const taskList = document.getElementById('sync-tasks');
+        let draggedItem = null;
+        
+        // 为每个任务添加拖拽事件
+        document.querySelectorAll('[draggable="true"]').forEach(item => {
+            item.addEventListener('dragstart', function() {
+                draggedItem = this;
+                setTimeout(() => this.classList.add('opacity-50'), 0);
+            });
+            
+            item.addEventListener('dragend', function() {
+                this.classList.remove('opacity-50');
+            });
+            
+            item.addEventListener('dragover', function(e) {
+                e.preventDefault();
+            });
+            
+            item.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (this !== draggedItem) {
+                    const allItems = Array.from(taskList.children);
+                    const draggedIndex = allItems.indexOf(draggedItem);
+                    const droppedIndex = allItems.indexOf(this);
+                    
+                    if (draggedIndex < droppedIndex) {
+                        taskList.insertBefore(draggedItem, this.nextSibling);
+                    } else {
+                        taskList.insertBefore(draggedItem, this);
+                    }
+                }
+            });
         });
     </script>
 </body>

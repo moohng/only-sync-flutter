@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-white h-full">
+    <div class="ios-status-bar text-black">
+        <span>9:41</span>
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+    
+    <div class="flex flex-col h-full pt-12">
+        <div class="absolute top-4 right-4">
+            <button class="text-blue-500 font-medium" onclick="window.location.href='home.html'">跳过</button>
+        </div>
+        
+        <div class="flex-1 flex flex-col items-center justify-center p-8">
+            <div class="swiper-container w-full h-full">
+                <div class="swiper-wrapper">
+                    <!-- 第一页 -->
+                    <div class="swiper-slide flex flex-col items-center justify-center">
+                        <div class="w-64 h-64 mb-8 flex items-center justify-center">
+                            <img src="../images/onboarding1.svg" alt="安全备份" class="w-full">
+                        </div>
+                        <h2 class="text-2xl font-bold mb-4">安全备份您的照片</h2>
+                        <p class="text-center text-gray-600 mb-8">通过WebDAV协议将您的照片安全地备份到私有云存储</p>
+                    </div>
+                    
+                    <!-- 第二页 -->
+                    <div class="swiper-slide flex flex-col items-center justify-center">
+                        <div class="w-64 h-64 mb-8 flex items-center justify-center">
+                            <img src="../images/onboarding2.svg" alt="自动同步" class="w-full">
+                        </div>
+                        <h2 class="text-2xl font-bold mb-4">自动同步无需操心</h2>
+                        <p class="text-center text-gray-600 mb-8">设置完成后，应用会在后台自动同步您的照片，无需手动操作</p>
+                    </div>
+                    
+                    <!-- 第三页 -->
+                    <div class="swiper-slide flex flex-col items-center justify-center">
+                        <div class="w-64 h-64 mb-8 flex items-center justify-center">
+                            <img src="../images/onboarding3.svg" alt="随时访问" class="w-full">
+                        </div>
+                        <h2 class="text-2xl font-bold mb-4">随时随地访问照片</h2>
+                        <p class="text-center text-gray-600 mb-8">在任何设备上访问您的照片，无论您身在何处</p>
+                        <button class="bg-blue-500 text-white px-8 py-3 rounded-lg font-medium" onclick="window.location.href='home.html'">
+                            开始使用
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 分页器 -->
+                <div class="swiper-pagination mt-8"></div>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .swiper-container {
+            width: 100%;
+            height: 100%;
+        }
+        .swiper-slide {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .swiper-pagination-bullet {
+            width: 8px;
+            height: 8px;
+            background: #ddd;
+            opacity: 1;
+        }
+        .swiper-pagination-bullet-active {
+            background: #3b82f6;
+        }
+    </style>
+    
+    <script>
+        // 模拟Swiper行为
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.swiper-slide');
+        const bullets = document.createElement('div');
+        bullets.className = 'flex justify-center space-x-2 mt-8';
+        
+        for (let i = 0; i < slides.length; i++) {
+            const bullet = document.createElement('div');
+            bullet.className = i === 0 ? 'w-2 h-2 rounded-full bg-blue-500' : 'w-2 h-2 rounded-full bg-gray-300';
+            bullet.onclick = () => goToSlide(i);
+            bullets.appendChild(bullet);
+        }
+        
+        document.querySelector('.swiper-pagination').appendChild(bullets);
+        
+        function goToSlide(index) {
+            slides[currentSlide].style.display = 'none';
+            slides[index].style.display = 'flex';
+            
+            document.querySelectorAll('.swiper-pagination .rounded-full').forEach((el, i) => {
+                if (i === index) {
+                    el.classList.remove('bg-gray-300');
+                    el.classList.add('bg-blue-500');
+                } else {
+                    el.classList.remove('bg-blue-500');
+                    el.classList.add('bg-gray-300');
+                }
+            });
+            
+            currentSlide = index;
+        }
+        
+        // 初始化显示第一页
+        for (let i = 1; i < slides.length; i++) {
+            slides[i].style.display = 'none';
+        }
+    </script>
+</body>
+</html> 

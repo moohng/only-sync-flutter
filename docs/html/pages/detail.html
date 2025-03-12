@@ -27,8 +27,12 @@
             </button>
         </div>
         
-        <div class="flex-1 flex items-center justify-center">
-            <img src="https://picsum.photos/seed/1/800/800" class="max-w-full max-h-full object-contain">
+        <div class="flex-1 flex items-center justify-center" 
+             id="imageContainer"
+             ontouchstart="handleTouchStart(event)"
+             ontouchmove="handleTouchMove(event)"
+             ontouchend="handleTouchEnd(event)">
+            <img src="https://picsum.photos/seed/1/800/800" class="max-w-full max-h-full object-contain" id="previewImage">
         </div>
         
         <div class="p-4 bg-black bg-opacity-50 fixed bottom-0 w-full safe-area-bottom"> <!-- 操作栏吸底 -->
@@ -52,5 +56,66 @@
             </div>
         </div>
     </div>
+
+    <script>
+        let startX, startY;
+        let initialScale = 1;
+        let currentScale = 1;
+        let startDistance;
+        
+        function handleTouchStart(event) {
+            if (event.touches.length === 2) {
+                // 双指缩放开始
+                const touch1 = event.touches[0];
+                const touch2 = event.touches[1];
+                const distance = Math.hypot(
+                    touch2.clientX - touch1.clientX,
+                    touch2.clientY - touch1.clientY
+                );
+                initialScale = currentScale;
+                startDistance = distance;
+            } else if (event.touches.length === 1) {
+                // 单指滑动
+                startX = event.touches[0].clientX;
+                startY = event.touches[0].clientY;
+            }
+        }
+        
+        function handleTouchMove(event) {
+            if (event.touches.length === 2) {
+                // 处理缩放
+                const touch1 = event.touches[0];
+                const touch2 = event.touches[1];
+                const distance = Math.hypot(
+                    touch2.clientX - touch1.clientX,
+                    touch2.clientY - touch1.clientY
+                );
+                
+                currentScale = initialScale * (distance / startDistance);
+                currentScale = Math.min(Math.max(currentScale, 0.5), 3);
+                
+                document.getElementById('previewImage').style.transform = `scale(${currentScale})`;
+            }
+        }
+        
+        function handleTouchEnd(event) {
+            // 处理滑动结束
+            if (event.changedTouches.length === 1) {
+                const endX = event.changedTouches[0].clientX;
+                const diffX = endX - startX;
+                
+                // 左右滑动切换照片
+                if (Math.abs(diffX) > 100) {
+                    if (diffX > 0) {
+                        // 右滑，上一张
+                        console.log("上一张");
+                    } else {
+                        // 左滑，下一张
+                        console.log("下一张");
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 </html>

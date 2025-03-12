@@ -21,9 +21,14 @@
         <!-- 顶部标题栏 -->
         <div class="p-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold">相册</h1>
-            <button class="text-blue-500">
-                <i class="fas fa-ellipsis-h"></i>
-            </button>
+            <div class="flex space-x-4">
+                <button class="text-blue-500" id="selectBtn" onclick="toggleSelectMode()">
+                    选择
+                </button>
+                <button class="text-blue-500">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+            </div>
         </div>
 
         <!-- 相册选择栏 -->
@@ -44,6 +49,18 @@
                 <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
                     <i class="fas fa-download mr-2"></i>
                     下载
+                </button>
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                    <i class="fas fa-tag mr-2"></i>风景
+                </button>
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                    <i class="fas fa-tag mr-2"></i>人物
+                </button>
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                    <i class="fas fa-tag mr-2"></i>美食
+                </button>
+                <button class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 flex items-center whitespace-nowrap">
+                    <i class="fas fa-plus mr-2"></i>添加标签
                 </button>
             </div>
         </div>
@@ -103,6 +120,44 @@
                 <span>设置</span>
             </a>
         </nav>
+
+        <!-- 添加多选模式下的底部工具栏 -->
+        <div id="selectionToolbar" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-between items-center">
+            <span class="text-gray-600">已选择 <span id="selectedCount">0</span> 项</span>
+            <div class="flex space-x-6">
+                <button class="text-center">
+                    <i class="fas fa-share-alt text-blue-500 text-xl"></i>
+                    <div class="text-xs mt-1">分享</div>
+                </button>
+                <button class="text-center">
+                    <i class="fas fa-cloud-upload-alt text-green-500 text-xl"></i>
+                    <div class="text-xs mt-1">同步</div>
+                </button>
+                <button class="text-center">
+                    <i class="fas fa-trash text-red-500 text-xl"></i>
+                    <div class="text-xs mt-1">删除</div>
+                </button>
+            </div>
+        </div>
     </div>
+
+    <script>
+        let selectMode = false;
+        let selectedItems = 0;
+        
+        function toggleSelectMode() {
+            selectMode = !selectMode;
+            document.getElementById('selectBtn').innerText = selectMode ? '取消' : '选择';
+            document.getElementById('selectionToolbar').classList.toggle('hidden', !selectMode);
+            document.querySelectorAll('.nav-bar')[0].classList.toggle('hidden', selectMode);
+        }
+        
+        function toggleSelectItem(el) {
+            if (!selectMode) return;
+            el.classList.toggle('selected');
+            selectedItems = document.querySelectorAll('.selected').length;
+            document.getElementById('selectedCount').innerText = selectedItems;
+        }
+    </script>
 </body>
 </html>

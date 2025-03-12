@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 h-full">
+    <div class="ios-status-bar text-black">
+        <span>9:41</span>
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+    
+    <div class="flex flex-col h-full pt-12">
+        <div class="p-4 flex justify-between items-center border-b bg-white">
+            <div class="flex items-center">
+                <button class="mr-4" onclick="history.back()">
+                    <i class="fas fa-chevron-left text-blue-500"></i>
+                </button>
+                <h1 class="text-lg font-semibold">存储统计</h1>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4">
+            <!-- 存储使用情况 -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                <h2 class="text-lg font-medium mb-3">存储使用情况</h2>
+                <div class="mb-4">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">已使用 2.4GB / 10GB</span>
+                        <span class="text-sm text-gray-600">24%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-blue-500 h-2.5 rounded-full" style="width: 24%"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 bg-blue-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-image text-blue-500 mr-2"></i>
+                            <span class="text-sm font-medium">照片</span>
+                        </div>
+                        <p class="text-lg font-bold mt-1">1.8GB</p>
+                        <p class="text-xs text-gray-500">1,245 张照片</p>
+                    </div>
+                    <div class="p-3 bg-purple-50 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-video text-purple-500 mr-2"></i>
+                            <span class="text-sm font-medium">视频</span>
+                        </div>
+                        <p class="text-lg font-bold mt-1">0.6GB</p>
+                        <p class="text-xs text-gray-500">32 个视频</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 同步趋势 -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                <h2 class="text-lg font-medium mb-3">同步趋势</h2>
+                <div class="h-64">
+                    <canvas id="syncChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 同步详情 -->
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <h2 class="text-lg font-medium mb-3">同步详情</h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <i class="fas fa-sync text-green-500 mr-3"></i>
+                            <span>本月同步次数</span>
+                        </div>
+                        <span class="font-medium">24 次</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-check text-blue-500 mr-3"></i>
+                            <span>上次同步时间</span>
+                        </div>
+                        <span class="font-medium">今天 14:30</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <i class="fas fa-tachometer-alt text-purple-500 mr-3"></i>
+                            <span>平均同步速度</span>
+                        </div>
+                        <span class="font-medium">1.2MB/s</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 mr-3"></i>
+                            <span>同步失败率</span>
+                        </div>
+                        <span class="font-medium">2.4%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 初始化图表
+        const ctx = document.getElementById('syncChart').getContext('2d');
+        const syncChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['6/10', '6/11', '6/12', '6/13', '6/14', '6/15', '今天'],
+                datasets: [{
+                    label: '同步照片数量',
+                    data: [15, 28, 36, 12, 45, 18, 24],
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

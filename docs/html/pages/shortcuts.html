@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 h-full">
+    <div class="ios-status-bar text-black">
+        <span>9:41</span>
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+    
+    <div class="flex flex-col h-full pt-12">
+        <div class="p-4 flex justify-between items-center border-b bg-white">
+            <div class="flex items-center">
+                <button class="mr-4" onclick="history.back()">
+                    <i class="fas fa-chevron-left text-blue-500"></i>
+                </button>
+                <h1 class="text-lg font-semibold">快捷操作</h1>
+            </div>
+            <button class="text-blue-500">
+                重置
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4">
+            <p class="text-sm text-gray-500 mb-4">自定义首页快捷操作，拖动调整顺序</p>
+            
+            <div class="bg-white rounded-lg shadow-sm mb-4">
+                <div class="p-4 border-b">
+                    <h2 class="font-medium">已启用的操作</h2>
+                </div>
+                <div class="p-4 space-y-2">
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-grip-lines text-gray-400 mr-3"></i>
+                            <i class="fas fa-sync text-blue-500 mr-3"></i>
+                            <span>同步所有照片</span>
+                        </div>
+                        <i class="fas fa-times text-gray-400"></i>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-grip-lines text-gray-400 mr-3"></i>
+                            <i class="fas fa-camera text-green-500 mr-3"></i>
+                            <span>同步相机胶卷</span>
+                        </div>
+                        <i class="fas fa-times text-gray-400"></i>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-grip-lines text-gray-400 mr-3"></i>
+                            <i class="fas fa-cloud-upload-alt text-purple-500 mr-3"></i>
+                            <span>上传到云端</span>
+                        </div>
+                        <i class="fas fa-times text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="p-4 border-b">
+                    <h2 class="font-medium">可添加的操作</h2>
+                </div>
+                <div class="p-4 space-y-2">
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-folder text-yellow-500 mr-3"></i>
+                            <span>创建相册</span>
+                        </div>
+                        <i class="fas fa-plus text-blue-500"></i>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-share-alt text-orange-500 mr-3"></i>
+                            <span>分享照片</span>
+                        </div>
+                        <i class="fas fa-plus text-blue-500"></i>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-download text-teal-500 mr-3"></i>
+                            <span>下载云端照片</span>
+                        </div>
+                        <i class="fas fa-plus text-blue-500"></i>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                        <div class="flex items-center">
+                            <i class="fas fa-tag text-indigo-500 mr-3"></i>
+                            <span>添加标签</span>
+                        </div>
+                        <i class="fas fa-plus text-blue-500"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
