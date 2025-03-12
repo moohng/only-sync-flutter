@@ -285,15 +285,15 @@ class AddAccountPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F6),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F4F6),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         toolbarHeight: 64,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Colors.blue,
+            color: theme.primaryColor,
             size: 20,
           ),
           onPressed: () => Get.back(),
@@ -308,11 +308,11 @@ class AddAccountPage extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () => Get.toNamed(Routes.scanPage),
-            icon: const Icon(Icons.camera_alt_outlined, color: Colors.blue),
+            icon: Icon(Icons.camera_alt_outlined, color: theme.primaryColor),
           ),
           IconButton(
             onPressed: () => logic.showQRCode(context),
-            icon: const Icon(Icons.grid_view_rounded, color: Colors.blue),
+            icon: Icon(Icons.grid_view_rounded, color: theme.primaryColor),
           ),
         ],
       ),
@@ -325,7 +325,7 @@ class AddAccountPage extends StatelessWidget {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -336,13 +336,13 @@ class AddAccountPage extends StatelessWidget {
                   // 按钮
                   _ActionButton(
                     label: '测试连接',
-                    color: Colors.blue,
+                    color: theme.primaryColor,
                     onPressed: logic.testConnection,
                   ),
                   const SizedBox(height: 16),
                   _ActionButton(
                     label: '保存配置',
-                    color: Colors.green,
+                    color: theme.colorScheme.secondary,
                     onPressed: logic.saveAccount,
                   ),
                 ],
@@ -383,6 +383,7 @@ class _FormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -392,7 +393,7 @@ class _FormField extends StatelessWidget {
             config.label,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[900],
+              color: theme.textTheme.bodyLarge?.color,
             ),
           ),
         ),
@@ -403,12 +404,12 @@ class _FormField extends StatelessWidget {
           decoration: InputDecoration(
             hintText: config.hint,
             hintStyle: TextStyle(
-              color: Colors.grey[400],
+              color: theme.hintColor,
               fontSize: 14,
             ),
-            border: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xffe5e7eb))),
-            enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xffe5e7eb))),
-            focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
+            border: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.primaryColor)),
             contentPadding: const EdgeInsets.all(8),
           ),
           validator: config.validator,
@@ -457,11 +458,12 @@ class _TipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFfffbeb),
+        color: theme.colorScheme.secondary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -470,16 +472,16 @@ class _TipCard extends StatelessWidget {
           Icon(
             Icons.info_outline,
             size: 20,
-            color: Colors.orange[700],
+            color: theme.colorScheme.secondary,
           ),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
               '请确保您的 WebDAV 服务器支持 HTTPS 连接，并且服务器证书有效。建议使用强密码保护您的账户安全。',
               style: TextStyle(
                 fontSize: 14,
                 height: 1.25,
-                color: Color(0xff4b5563),
+                color: theme.textTheme.bodyMedium?.color,
               ),
             ),
           ),

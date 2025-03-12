@@ -16,6 +16,7 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(SettingsController());
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     // 定义统一的开关样式
     final switchStyle = SwitchThemeData(thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
@@ -25,7 +26,7 @@ class SettingsPage extends StatelessWidget {
       return Colors.white; // 关闭状态下的圆形按钮颜色
     }), trackColor: WidgetStateProperty.resolveWith<Color>((states) {
       if (states.contains(WidgetState.selected)) {
-        return Colors.green; // 开启状态下的轨道颜色
+        return colorScheme.secondary; // 开启状态下的轨道颜色
       }
       return Colors.grey.withOpacity(0.3); // 关闭状态下的轨道颜色
     }), trackOutlineColor: WidgetStateProperty.resolveWith((states) {
@@ -37,14 +38,14 @@ class SettingsPage extends StatelessWidget {
         switchTheme: switchStyle,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF2F4F6), // 与原型保持一致的背景色
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('设置'),
           titleTextStyle: theme.textTheme.titleLarge?.copyWith(
             fontSize: 24,
             fontWeight: FontWeight.w700,
           ),
-          backgroundColor: const Color(0xFFF2F4F6),
+          backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
           toolbarHeight: 64,
         ),
@@ -57,17 +58,17 @@ class SettingsPage extends StatelessWidget {
               children: [
                 // _buildGroupHeader(theme, '云存储服务'),
                 ListTile(
-                  leading: const Icon(Icons.cloud, color: Colors.blue, size: 22),
+                  leading: Icon(Icons.cloud, color: theme.primaryColor, size: 22),
                   title: const Text('WebDAV'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         '已连接',
-                        style: theme.textTheme.bodySmall?.copyWith(color: Colors.green),
+                        style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.secondary),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                      Icon(Icons.chevron_right_rounded, color: theme.dividerColor),
                     ],
                   ),
                   onTap: () => Get.toNamed(Routes.addAccountPage),
@@ -98,28 +99,28 @@ class SettingsPage extends StatelessWidget {
               children: [
                 // _buildGroupHeader(theme, '同步策略'),
                 Obx(() => SwitchListTile(
-                      secondary: const Icon(Icons.wifi, color: Colors.green, size: 22),
+                      secondary: Icon(Icons.wifi, color: colorScheme.secondary, size: 22),
                       title: const Text('仅 Wi-Fi 下同步'),
                       value: controller.isWifiOnly.value,
                       onChanged: (value) => controller.isWifiOnly.value = value,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     )),
                 Obx(() => SwitchListTile(
-                      secondary: const Icon(Icons.battery_alert, color: Colors.orange, size: 22),
+                      secondary: Icon(Icons.battery_alert, color: colorScheme.error, size: 22),
                       title: const Text('低电量时暂停同步'),
                       value: controller.isLowBatteryPause.value,
                       onChanged: (value) => controller.isLowBatteryPause.value = value,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     )),
                 Obx(() => SwitchListTile(
-                      secondary: const Icon(Icons.nightlight_round, color: Colors.indigo, size: 22),
+                      secondary: Icon(Icons.nightlight_round, color: colorScheme.tertiary, size: 22),
                       title: const Text('夜间自动同步'),
                       value: controller.isNightSync.value,
                       onChanged: (value) => controller.isNightSync.value = value,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     )),
                 Obx(() => SwitchListTile(
-                      secondary: const Icon(Icons.image, color: Colors.purple, size: 22),
+                      secondary: Icon(Icons.image, color: colorScheme.secondary, size: 22),
                       title: const Text('原图上传'),
                       value: controller.isOriginalUpload.value,
                       onChanged: (value) => controller.isOriginalUpload.value = value,
@@ -134,7 +135,7 @@ class SettingsPage extends StatelessWidget {
               theme,
               children: [
                 ListTile(
-                  leading: const Icon(Icons.info_outline, color: Colors.blue, size: 22),
+                  leading: Icon(Icons.info_outline, color: theme.primaryColor, size: 22),
                   title: const Text('关于'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -142,11 +143,11 @@ class SettingsPage extends StatelessWidget {
                       Text(
                         '版本 1.0.0',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
+                          color: theme.textTheme.bodySmall?.color,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                      Icon(Icons.chevron_right_rounded, color: theme.dividerColor),
                     ],
                   ),
                   onTap: () {

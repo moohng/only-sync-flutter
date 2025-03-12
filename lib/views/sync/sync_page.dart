@@ -81,7 +81,7 @@ class SyncController extends GetxController {
       Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Get.theme.colorScheme.background,
+          color: Get.theme.cardColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Column(
@@ -90,7 +90,7 @@ class SyncController extends GetxController {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('添加同步任务', style: Get.textTheme.titleLarge),
+                Text('添加同步任务', style: Get.textTheme.titleMedium),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Get.back(),
@@ -100,7 +100,7 @@ class SyncController extends GetxController {
             const SizedBox(height: 16),
             _buildTaskOption(
               icon: Icons.camera_alt,
-              iconColor: Colors.blue,
+              iconColor: Get.theme.primaryColor,
               title: '相机胶卷',
               subtitle: '同步所有相机拍摄的照片',
               onTap: () {
@@ -108,10 +108,10 @@ class SyncController extends GetxController {
                 Get.back();
               },
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             _buildTaskOption(
               icon: Icons.folder,
-              iconColor: Colors.amber,
+              iconColor: Get.theme.colorScheme.secondary,
               title: '选择相册',
               subtitle: '选择一个或多个相册进行同步',
               onTap: () {
@@ -135,11 +135,23 @@ class SyncController extends GetxController {
   }) {
     return Card(
       margin: EdgeInsets.zero,
+      elevation: 0,
+      color: Get.theme.cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: Get.theme.dividerColor,
+          width: 1,
+        ),
+      ),
       child: ListTile(
         onTap: onTap,
         leading: Icon(icon, color: iconColor),
         title: Text(title),
-        subtitle: Text(subtitle),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 14),
+        ),
         trailing: const Icon(Icons.chevron_right),
       ),
     );
@@ -155,22 +167,16 @@ class SyncPage extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F6),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('同步'),
         titleTextStyle: theme.textTheme.titleLarge?.copyWith(
           fontSize: 24,
           fontWeight: FontWeight.w700,
         ),
-        backgroundColor: const Color(0xFFF2F4F6),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         toolbarHeight: 64,
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.cloud_outlined, color: Colors.blue),
-        //     onPressed: () => Get.toNamed(Routes.webdavBrowser),
-        //   ),
-        // ],
       ),
       body: Obx(() {
         if (controller.syncTasks.isEmpty) {
@@ -181,7 +187,11 @@ class SyncPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: controller.showAddTaskDialog,
         backgroundColor: theme.primaryColor,
-        child: const Icon(Icons.add),
+        shape: const CircleBorder(),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -256,7 +266,7 @@ class _SyncTaskCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      color: isSyncing ? const Color(0xFFEBF3FF) : Colors.white,
+      color: isSyncing ? theme.primaryColor.withOpacity(0.1) : Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -266,7 +276,7 @@ class _SyncTaskCard extends StatelessWidget {
               children: [
                 Icon(
                   task['icon'] as IconData,
-                  color: isSyncing ? Colors.blue : Colors.red,
+                  color: isSyncing ? theme.primaryColor : theme.colorScheme.error,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -279,9 +289,9 @@ class _SyncTaskCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 PopupMenuButton<String>(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.more_vert,
-                    color: Colors.grey,
+                    color: theme.dividerColor,
                     size: 20,
                   ),
                   offset: const Offset(0, 40),
@@ -350,8 +360,8 @@ class _SyncTaskCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: task['progress'] as double,
-                        backgroundColor: Colors.blue.withOpacity(0.1),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                        backgroundColor: theme.primaryColor.withOpacity(0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
                         minHeight: 4,
                       ),
                     ),
@@ -359,8 +369,8 @@ class _SyncTaskCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Text(
                     '${(task['progress'] * 100).toInt()}%',
-                    style: const TextStyle(
-                      color: Colors.blue,
+                    style: TextStyle(
+                      color: theme.primaryColor,
                       fontSize: 13,
                     ),
                   ),

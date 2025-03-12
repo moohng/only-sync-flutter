@@ -27,8 +27,9 @@ class MyApp extends StatelessWidget {
       title: 'Only Sync',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey.shade200),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey.shade200, secondary: const Color(0xff10b981)),
         useMaterial3: true,
+        primaryColor: const Color(0xff3b82f6),
         cardColor: Colors.white,
         dividerColor: const Color.fromARGB(255, 229, 231, 235),
         scaffoldBackgroundColor: const Color.fromARGB(255, 242, 244, 246),
