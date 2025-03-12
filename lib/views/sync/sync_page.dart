@@ -152,76 +152,65 @@ class SyncPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(SyncController());
+    final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF2F4F6),
       appBar: AppBar(
-        title: const Text('同步状态'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.cloud),
-            onPressed: () {
-              // TODO: 实现云端文件浏览功能
-            },
-          ),
-        ],
+        title: const Text('同步'),
+        titleTextStyle: theme.textTheme.titleLarge?.copyWith(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+        ),
+        backgroundColor: const Color(0xFFF2F4F6),
+        elevation: 0,
+        toolbarHeight: 64,
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.cloud_outlined, color: Colors.blue),
+        //     onPressed: () => Get.toNamed(Routes.webdavBrowser),
+        //   ),
+        // ],
       ),
       body: Obx(() {
-        if (!controller.hasConfig.value) {
-          return _buildEmptyState();
+        if (controller.syncTasks.isEmpty) {
+          return _buildEmptyState(theme);
         }
         return _buildSyncTasks(controller);
       }),
-      floatingActionButton: Obx(() {
-        if (!controller.hasConfig.value) return const SizedBox.shrink();
-        return FloatingActionButton(
-          onPressed: controller.showAddTaskDialog,
-          child: const Icon(Icons.add),
-        );
-      }),
+      floatingActionButton: FloatingActionButton(
+        onPressed: controller.showAddTaskDialog,
+        backgroundColor: theme.primaryColor,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ThemeData theme) {
     return Center(
-      child: Card(
-        margin: const EdgeInsets.all(16),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.cloud_outlined, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              const Text(
-                '开始同步您的照片',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '请配置 WebDAV 服务以开始自动同步您的照片到云端',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () => Get.toNamed(Routes.scanPage),
-                    icon: const Icon(Icons.qr_code_scanner),
-                    label: const Text('扫码配置'),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    onPressed: () => Get.toNamed(Routes.addAccountPage),
-                    icon: const Icon(Icons.edit),
-                    label: const Text('手动配置'),
-                  ),
-                ],
-              ),
-            ],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.cloud_upload_outlined,
+            size: 64,
+            color: theme.primaryColor.withOpacity(0.5),
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            '暂无同步任务',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '点击下方按钮添加同步任务',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -262,8 +251,12 @@ class _SyncTaskCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      color: isSyncing ? theme.colorScheme.primaryContainer.withOpacity(0.1) : null,
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: isSyncing ? const Color(0xFFEBF3FF) : Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -271,22 +264,38 @@ class _SyncTaskCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(task['icon'] as IconData, color: theme.primaryColor),
+                Icon(
+                  task['icon'] as IconData,
+                  color: isSyncing ? Colors.blue : Colors.red,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   task['name'] as String,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                  ),
                 ),
                 const Spacer(),
                 PopupMenuButton<String>(
+                  icon: const Icon(
+                    Icons.more_vert,
+                    color: Colors.grey,
+                    size: 20,
+                  ),
+                  offset: const Offset(0, 40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   itemBuilder: (context) => [
                     if (isSyncing)
                       PopupMenuItem(
                         value: 'pause',
                         child: Row(
                           children: const [
-                            Icon(Icons.pause),
-                            SizedBox(width: 8),
+                            Icon(Icons.pause, size: 20),
+                            SizedBox(width: 12),
                             Text('暂停同步'),
                           ],
                         ),
@@ -296,8 +305,8 @@ class _SyncTaskCard extends StatelessWidget {
                         value: 'resume',
                         child: Row(
                           children: const [
-                            Icon(Icons.play_arrow),
-                            SizedBox(width: 8),
+                            Icon(Icons.play_arrow, size: 20),
+                            SizedBox(width: 12),
                             Text('继续同步'),
                           ],
                         ),
@@ -306,9 +315,12 @@ class _SyncTaskCard extends StatelessWidget {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete, color: theme.colorScheme.error),
-                          const SizedBox(width: 8),
-                          Text('删除任务', style: TextStyle(color: theme.colorScheme.error)),
+                          Icon(Icons.delete, color: theme.colorScheme.error, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            '删除任务',
+                            style: TextStyle(color: theme.colorScheme.error),
+                          ),
                         ],
                       ),
                     ),
@@ -330,7 +342,7 @@ class _SyncTaskCard extends StatelessWidget {
               ],
             ),
             if (isSyncing) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -338,21 +350,30 @@ class _SyncTaskCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: task['progress'] as double,
-                        backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                        backgroundColor: Colors.blue.withOpacity(0.1),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                        minHeight: 4,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text('${(task['progress'] * 100).toInt()}%'),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${(task['progress'] * 100).toInt()}%',
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
               ),
             ],
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               isSyncing
                   ? '已同步 ${task['synced']}/${task['total']} 张照片'
                   : '已暂停 - 已同步 ${task['synced']}/${task['total']} 张照片',
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: TextStyle(
+                fontSize: 13,
                 color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
               ),
             ),
