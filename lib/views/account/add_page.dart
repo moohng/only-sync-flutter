@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:only_sync_flutter/routes/route.dart';
+import 'package:only_sync_flutter/utils/encryption_util.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:flutter/material.dart';
@@ -38,11 +39,13 @@ class AddAccountLogic extends GetxController {
 
   // 生成包含账户信息的JSON字符串，用于二维码
   String generateAccountQRData() {
+    // 生成二维码时加密密码
+    final encryptedPassword = EncryptionUtil.encrypt(passwordController.text);
     final accountMap = {
       'type': 'WebDAV',
       'url': urlController.text,
       'username': usernameController.text,
-      'password': passwordController.text,
+      'password': encryptedPassword,
       'path': pathController.text,
     };
     return jsonEncode(accountMap);
@@ -95,13 +98,16 @@ class AddAccountLogic extends GetxController {
       final prefs = await SharedPreferences.getInstance();
       final accounts = prefs.getStringList('accounts') ?? [];
 
+      // 加密密码
+      final encryptedPassword = EncryptionUtil.encrypt(passwordController.text);
+
       final accountMap = {
         'id': isEditMode.value ? editingId! : const Uuid().v4(),
         'type': 'WebDAV',
         'url': urlController.text,
         'path': pathController.text,
         'username': usernameController.text,
-        'password': passwordController.text,
+        'password': encryptedPassword, // 存储加密后的密码
       };
 
       if (isEditMode.value) {
@@ -174,6 +180,7 @@ class AddAccountLogic extends GetxController {
   RemoteStorageService _createStorageService() {
     final url = urlController.text;
     final username = usernameController.text;
+    // 创建服务时使用原始密码
     final password = passwordController.text;
     final remoteBasePath = pathController.text;
 
@@ -194,7 +201,9 @@ class AddAccountLogic extends GetxController {
       if (!args.containsKey('id')) {
         urlController.text = args['url'] ?? '';
         usernameController.text = args['username'] ?? '';
-        passwordController.text = args['password'] ?? '';
+        // 解密密码
+        final decryptedPassword = EncryptionUtil.decrypt(args['password'] ?? '');
+        passwordController.text = decryptedPassword;
         pathController.text = args['path'] ?? '';
       } else {
         // 编辑模式
@@ -209,7 +218,9 @@ class AddAccountLogic extends GetxController {
         final account = jsonDecode(accountJson);
         urlController.text = account['url'] ?? '';
         usernameController.text = account['username'] ?? '';
-        passwordController.text = account['password'] ?? '';
+        // 解密密码
+        final decryptedPassword = EncryptionUtil.decrypt(account['password'] ?? '');
+        passwordController.text = decryptedPassword;
         pathController.text = account['path'] ?? '';
       }
     }
@@ -309,7 +320,9 @@ class AddAccountPage extends StatelessWidget {
                 final scanInfo = jsonDecode(scanResult);
                 logic.urlController.text = scanInfo['url'] ?? '';
                 logic.usernameController.text = scanInfo['username'] ?? '';
-                logic.passwordController.text = scanInfo['password'] ?? '';
+                // 解密密码
+                final decryptedPassword = EncryptionUtil.decrypt(scanInfo['password'] ?? '');
+                logic.passwordController.text = decryptedPassword;
               }
             },
             icon: Icon(Icons.camera_alt_outlined, color: theme.primaryColor),

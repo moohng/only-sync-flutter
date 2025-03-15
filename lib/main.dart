@@ -63,15 +63,20 @@ class MainPage extends StatelessWidget {
       bottomNavigationBar: Obx(() => NavigationBar(
             selectedIndex: controller.tabIndex.value,
             onDestinationSelected: controller.changeTabIndex,
+            indicatorColor: Colors.transparent,
+            // overlayColor: WidgetStatePropertyAll(Colors.amberAccent),
+            // elevation: 18,
+            // shadowColor: Colors.black26,
+            // indicatorShape: const StadiumBorder(),
             destinations: const [
               NavigationDestination(
-                icon: Icon(Icons.photo_album_outlined),
-                selectedIcon: Icon(Icons.photo_album),
+                icon: Icon(Icons.photo_outlined),
+                selectedIcon: Icon(Icons.photo),
                 label: '相册',
               ),
               NavigationDestination(
-                icon: Icon(Icons.sync_outlined),
-                selectedIcon: Icon(Icons.sync),
+                icon: Icon(Icons.cloud_outlined),
+                selectedIcon: Icon(Icons.cloud),
                 label: '同步',
               ),
               NavigationDestination(
