@@ -2,23 +2,18 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:only_sync_flutter/core/storage/storage_service.dart';
 import 'package:only_sync_flutter/core/store/app_store.dart';
 import 'package:only_sync_flutter/views/home/widgets/media_grid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:only_sync_flutter/core/storage/storage_service.dart';
 
 class HomeLogic extends GetxController {
-  var pageIndex = 0.obs;
   WebDAVService? activeService;
 
   @override
   void onInit() {
     super.onInit();
     _initStorageService();
-  }
-
-  void changePage(int index) {
-    pageIndex.value = index;
   }
 
   Future<void> _initStorageService() async {
@@ -51,7 +46,6 @@ class HomeLogic extends GetxController {
       if (activeAccount != null) {
         activeService = WebDAVService(
           id: activeAccount['id'],
-          name: activeAccount['name'],
           url: activeAccount['url'],
           username: activeAccount['username'] ?? '',
           password: activeAccount['password'] ?? '',
@@ -61,10 +55,10 @@ class HomeLogic extends GetxController {
         await _checkServiceAvailability();
         await Get.putAsync(() async => MediaGridController());
         Get.find<MediaGridController>()
-            .updateStorageService(activeService, isAvailable: AppStore.to.isServiceAvailable.value);
+            .updateStorageService(activeService, isAvailable: AppStore.to.currentServiceId.value.isNotEmpty);
       }
     } catch (e) {
-      AppStore.to.updateServiceStatus(false);
+      AppStore.to.updateService('');
       print('初始化存储服务失败: $e');
     }
   }
@@ -73,12 +67,12 @@ class HomeLogic extends GetxController {
     try {
       if (activeService != null) {
         await activeService!.testConnection();
-        AppStore.to.updateServiceStatus(true);
+        AppStore.to.updateService(activeService!.id!);
       } else {
-        AppStore.to.updateServiceStatus(false);
+        AppStore.to.updateService('');
       }
     } catch (e) {
-      AppStore.to.updateServiceStatus(false);
+      AppStore.to.updateService('');
       print('服务不可用: $e');
     }
   }
@@ -88,7 +82,6 @@ class HomeLogic extends GetxController {
     try {
       activeService = WebDAVService(
         id: account['id'],
-        name: account['name'],
         url: account['url'],
         username: account['username'] ?? '',
         password: account['password'] ?? '',
@@ -98,11 +91,11 @@ class HomeLogic extends GetxController {
       await _checkServiceAvailability();
       // 更新同步状态存储
       final mediaController = Get.find<MediaGridController>();
-      mediaController.updateStorageService(activeService, isAvailable: AppStore.to.isServiceAvailable.value);
+      mediaController.updateStorageService(activeService, isAvailable: AppStore.to.currentServiceId.value.isNotEmpty);
       // 刷新媒体网格以显示新的同步状态
       mediaController.refresh();
     } catch (e) {
-      AppStore.to.updateServiceStatus(false);
+      AppStore.to.updateService('');
       print('切换存储服务失败: $e');
       Get.snackbar('错误', '切换存储服务失败：$e');
     }
@@ -114,19 +107,18 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final homeLogic = Get.put(HomeLogic());
-
+    Get.put(HomeLogic());
     return Scaffold(
       key: Get.nestedKey(1),
       appBar: AppBar(
         title: Obx(() => Row(
               children: [
-                Text(homeLogic.activeService?.name ?? 'Only Sync'),
+                const Text('Only Sync'),
                 const SizedBox(width: 8),
                 Icon(
-                  AppStore.to.isServiceAvailable.value ? Icons.cloud_done : Icons.cloud_off,
+                  AppStore.to.currentServiceId.value.isNotEmpty ? Icons.cloud_done : Icons.cloud_off,
                   size: 20,
-                  color: AppStore.to.isServiceAvailable.value ? Colors.green : Colors.red,
+                  color: AppStore.to.currentServiceId.value.isNotEmpty ? Colors.green : Colors.red,
                 ),
               ],
             )),

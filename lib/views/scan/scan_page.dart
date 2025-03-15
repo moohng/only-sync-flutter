@@ -11,6 +11,7 @@ class ScanPage extends StatefulWidget {
 
 class _ScanPageState extends State<ScanPage> {
   late MobileScannerController controller;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -27,48 +28,25 @@ class _ScanPageState extends State<ScanPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('扫描二维码'),
-        actions: [
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: controller,
-              builder: (context, state, child) {
-                if (state.torchState == TorchState.on) {
-                  return const Icon(Icons.flash_on);
-                }
-                return const Icon(Icons.flash_off);
-              },
-            ),
-            onPressed: () => controller.toggleTorch(),
-          ),
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: controller,
-              builder: (context, state, child) {
-                switch (state.cameraDirection) {
-                  case CameraFacing.front:
-                    return const Icon(Icons.camera_front);
-                  default:
-                    return const Icon(Icons.camera_rear);
-                }
-              },
-            ),
-            onPressed: () => controller.switchCamera(),
-          ),
-        ],
       ),
       body: Stack(
         children: [
           MobileScanner(
             controller: controller,
             onDetect: (capture) {
+              if (_isProcessing) return; // 如果正在处理中，直接返回
+              _isProcessing = true;
+
               final List<Barcode> barcodes = capture.barcodes;
-              for (final barcode in barcodes) {
-                if (barcode.rawValue != null) {
-                  // 找到有效的二维码后返回结果
-                  Get.back(result: barcode.rawValue);
-                  return;
-                }
+              if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
+                print('扫描的二维码信息：${barcodes.first.rawValue}');
+                Get.back(result: barcodes.first.rawValue);
               }
+
+              // 设置一个延时，比如1秒后才能处理下一次扫描
+              Future.delayed(const Duration(seconds: 1), () {
+                _isProcessing = false;
+              });
             },
             errorBuilder: (context, error, child) {
               return Center(
@@ -91,6 +69,43 @@ class _ScanPageState extends State<ScanPage> {
             painter: ScannerOverlay(),
             child: Container(),
           ),
+          Positioned(
+              left: 0,
+              right: 0,
+              top: MediaQuery.of(context).size.width * 1.15,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    '将二维码放入框内即可自动扫描',
+                    style: TextStyle(color: Color(0xb3ffffff)),
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  ValueListenableBuilder(
+                    valueListenable: controller,
+                    builder: (context, state, child) {
+                      return IconButton(
+                        onPressed: () {
+                          controller.toggleTorch();
+                        },
+                        icon: state.torchState == TorchState.on
+                            ? const Icon(Icons.lightbulb)
+                            : const Icon(Icons.lightbulb_outline),
+                        style: ButtonStyle(
+                          foregroundColor: WidgetStatePropertyAll(
+                            state.torchState == TorchState.on ? const Color(0xffffffff) : const Color(0x80ffffff),
+                          ),
+                          iconColor: WidgetStatePropertyAll(
+                            state.torchState == TorchState.on ? const Color(0xffffffff) : const Color(0x80ffffff),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              )),
         ],
       ),
     );
@@ -124,7 +139,7 @@ class ScannerOverlay extends CustomPainter {
 
     final scanAreaSize = size.width * 0.7;
     final scanAreaLeft = (size.width - scanAreaSize) / 2;
-    final scanAreaTop = (size.height - scanAreaSize) / 2;
+    final scanAreaTop = (size.height - scanAreaSize) / 4;
 
     // 绘制半透明背景
     canvas.drawPath(

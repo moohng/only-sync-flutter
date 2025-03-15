@@ -88,7 +88,8 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
             Positioned(
               top: 4,
               right: 4,
-              child: Obx(() => AppStore.to.isServiceAvailable.value ? _buildSyncButton(context) : const SizedBox()),
+              child: Obx(
+                  () => AppStore.to.currentServiceId.value.isNotEmpty ? _buildSyncButton(context) : const SizedBox()),
             ),
             // 视频时长标识
             if (widget.file.type == MediaType.video)

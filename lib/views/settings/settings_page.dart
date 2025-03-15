@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:only_sync_flutter/core/store/app_store.dart';
 import 'package:only_sync_flutter/routes/route.dart';
 
 class SettingsController extends GetxController {
@@ -63,15 +64,18 @@ class SettingsPage extends StatelessWidget {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        '已连接',
-                        style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.secondary),
-                      ),
+                      Obx(() => AppStore.to.currentServiceId.value.isNotEmpty
+                          ? Text(
+                              '已连接',
+                              style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.secondary),
+                            )
+                          : Text('未连接', style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.tertiary))),
                       const SizedBox(width: 8),
                       Icon(Icons.chevron_right_rounded, color: theme.dividerColor),
                     ],
                   ),
-                  onTap: () => Get.toNamed(Routes.addAccountPage),
+                  onTap: () =>
+                      Get.toNamed(Routes.addAccountPage, arguments: {'id': AppStore.to.currentServiceId.value}),
                 ),
                 // ListTile(
                 //   leading: const Icon(Icons.cloud, color: Colors.blue, size: 22),

@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/storage/storage_service.dart';
 import 'package:only_sync_flutter/views/home/home_page.dart';
-import 'package:only_sync_flutter/views/home/widgets/sync_drawer.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,8 +13,7 @@ class AddAccountLogic extends GetxController {
   final isLoading = false.obs;
   final formKey = GlobalKey<FormState>();
 
-  final nameController = TextEditingController();
-  final hostController = TextEditingController();
+  final urlController = TextEditingController();
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final pathController = TextEditingController();
@@ -42,8 +40,7 @@ class AddAccountLogic extends GetxController {
   String generateAccountQRData() {
     final accountMap = {
       'type': 'WebDAV',
-      'name': nameController.text,
-      'url': hostController.text,
+      'url': urlController.text,
       'username': usernameController.text,
       'password': passwordController.text,
       'path': pathController.text,
@@ -101,8 +98,7 @@ class AddAccountLogic extends GetxController {
       final accountMap = {
         'id': isEditMode.value ? editingId! : const Uuid().v4(),
         'type': 'WebDAV',
-        'name': nameController.text,
-        'url': hostController.text,
+        'url': urlController.text,
         'path': pathController.text,
         'username': usernameController.text,
         'password': passwordController.text,
@@ -129,10 +125,9 @@ class AddAccountLogic extends GetxController {
         accounts.add(jsonEncode(accountMap));
         await prefs.setStringList('accounts', accounts);
         await prefs.setString('activeAccount', accountMap['id']!);
-        await Get.find<HomeLogic>().switchStorageService(accountMap);
+        final homeLogic = !Get.isRegistered<HomeLogic>() ? Get.put(HomeLogic()) : Get.find<HomeLogic>();
+        await homeLogic.switchStorageService(accountMap);
       }
-
-      Get.find<SyncDrawerController>().loadAccounts();
       Get.back();
       Get.snackbar('成功', isEditMode.value ? '账户已更新' : '账户添加成功并已启用');
     } catch (e) {
@@ -163,11 +158,9 @@ class AddAccountLogic extends GetxController {
         if (newAccounts.isNotEmpty) {
           final firstAcc = jsonDecode(newAccounts.first);
           await prefs.setString('activeAccount', firstAcc['id']);
-          Get.find<SyncDrawerController>().loadAccounts();
           await Get.find<HomeLogic>().switchStorageService(firstAcc);
         } else {
           await prefs.remove('activeAccount');
-          Get.find<SyncDrawerController>().loadAccounts();
         }
       }
 
@@ -179,15 +172,13 @@ class AddAccountLogic extends GetxController {
   }
 
   RemoteStorageService _createStorageService() {
-    final name = nameController.text;
-    final host = hostController.text;
+    final url = urlController.text;
     final username = usernameController.text;
     final password = passwordController.text;
     final remoteBasePath = pathController.text;
 
     return WebDAVService(
-      name: name,
-      url: host,
+      url: url,
       username: username,
       password: password,
       remoteBasePath: remoteBasePath,
@@ -201,8 +192,7 @@ class AddAccountLogic extends GetxController {
     if (args != null && args is Map<String, dynamic>) {
       // 如果没有 id，说明是从二维码来的数据
       if (!args.containsKey('id')) {
-        nameController.text = args['name'] ?? '';
-        hostController.text = args['url'] ?? '';
+        urlController.text = args['url'] ?? '';
         usernameController.text = args['username'] ?? '';
         passwordController.text = args['password'] ?? '';
         pathController.text = args['path'] ?? '';
@@ -210,11 +200,17 @@ class AddAccountLogic extends GetxController {
         // 编辑模式
         isEditMode.value = true;
         editingId = args['id'];
-        nameController.text = args['name'] ?? '';
-        hostController.text = args['url'] ?? '';
-        usernameController.text = args['username'] ?? '';
-        passwordController.text = args['password'] ?? '';
-        pathController.text = args['path'] ?? '';
+        final prefs = await SharedPreferences.getInstance();
+        final accounts = prefs.getStringList('accounts') ?? [];
+        final accountJson = accounts.where((json) {
+          final acc = jsonDecode(json);
+          return acc['id'] == editingId;
+        }).first;
+        final account = jsonDecode(accountJson);
+        urlController.text = account['url'] ?? '';
+        usernameController.text = account['username'] ?? '';
+        passwordController.text = account['password'] ?? '';
+        pathController.text = account['path'] ?? '';
       }
     }
     super.onInit();
@@ -222,8 +218,7 @@ class AddAccountLogic extends GetxController {
 
   @override
   void onClose() {
-    nameController.dispose();
-    hostController.dispose();
+    urlController.dispose();
     usernameController.dispose();
     passwordController.dispose();
     pathController.dispose();
@@ -243,7 +238,7 @@ class AddAccountPage extends StatelessWidget {
       FormFieldConfig(
         label: '服务器地址',
         hint: 'https://example.com/webdav',
-        controller: logic.hostController,
+        controller: logic.urlController,
         validator: (value) {
           if (value?.isEmpty ?? true) {
             return '请输入服务器地址';
@@ -307,7 +302,16 @@ class AddAccountPage extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            onPressed: () => Get.toNamed(Routes.scanPage),
+            onPressed: () async {
+              final String scanResult = await Get.toNamed(Routes.scanPage);
+              // 回填入表单
+              if (scanResult.isNotEmpty) {
+                final scanInfo = jsonDecode(scanResult);
+                logic.urlController.text = scanInfo['url'] ?? '';
+                logic.usernameController.text = scanInfo['username'] ?? '';
+                logic.passwordController.text = scanInfo['password'] ?? '';
+              }
+            },
             icon: Icon(Icons.camera_alt_outlined, color: theme.primaryColor),
           ),
           IconButton(

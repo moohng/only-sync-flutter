@@ -14,7 +14,6 @@ abstract class RemoteStorageService {
 }
 
 class WebDAVService extends RemoteStorageService {
-  final String name;
   final String url;
   final String username;
   final String password;
@@ -22,7 +21,6 @@ class WebDAVService extends RemoteStorageService {
   late final Client client;
 
   WebDAVService({
-    required this.name,
     required this.url,
     required this.username,
     required this.password,
@@ -73,7 +71,6 @@ class WebDAVService extends RemoteStorageService {
   Future<void> saveAccount() async {
     final account = {
       'type': 'WebDAV',
-      'name': name,
       'url': url,
       'username': username,
       'password': password,
