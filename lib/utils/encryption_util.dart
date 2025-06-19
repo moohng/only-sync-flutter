@@ -1,8 +1,10 @@
 import 'package:encrypt/encrypt.dart';
 
 class EncryptionUtil {
-  static final _key = Key.fromUtf8('uyru456wqwkj3ng4de67aw23lk98uyde'); // AES-256
-  static final _iv = IV.fromLength(16);
+  static final _key = Key.fromUtf8('ro94irjfh3gdf6r9ei7uy5kloijuyh56'); // AES-256
+  static final _iv = IV.fromUtf8('aswe34rf51giujt5'); // 128位IV
+
+  /// 初始化加密器
   static final _encrypter = Encrypter(AES(_key));
 
   /// 加密字符串

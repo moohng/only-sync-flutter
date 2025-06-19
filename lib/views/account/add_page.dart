@@ -313,9 +313,9 @@ class AddAccountPage extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () async {
-              final String scanResult = await Get.toNamed(Routes.scanPage);
+              final String? scanResult = await Get.toNamed(Routes.scanPage);
               // 回填入表单
-              if (scanResult.isNotEmpty) {
+              if (scanResult != null && scanResult.isNotEmpty) {
                 final scanInfo = jsonDecode(scanResult);
                 logic.urlController.text = scanInfo['url'] ?? '';
                 logic.usernameController.text = scanInfo['username'] ?? '';
