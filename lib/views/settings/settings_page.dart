@@ -74,8 +74,10 @@ class SettingsPage extends StatelessWidget {
                       Icon(Icons.chevron_right_rounded, color: theme.dividerColor),
                     ],
                   ),
-                  onTap: () =>
-                      Get.toNamed(Routes.addAccountPage, arguments: {'id': AppStore.to.currentServiceId.value}),
+                  onTap: () => Get.toNamed(Routes.addAccountPage,
+                      arguments: AppStore.to.currentServiceId.value.isNotEmpty
+                          ? {'id': AppStore.to.currentServiceId.value}
+                          : null),
                 ),
                 // ListTile(
                 //   leading: const Icon(Icons.cloud, color: Colors.blue, size: 22),

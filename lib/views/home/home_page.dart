@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/storage/storage_service.dart';
 import 'package:only_sync_flutter/core/store/app_store.dart';
+import 'package:only_sync_flutter/utils/encryption_util.dart';
 import 'package:only_sync_flutter/views/home/widgets/media_grid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -44,11 +45,13 @@ class HomeLogic extends GetxController {
       }
 
       if (activeAccount != null) {
+        // 解密
+        final decryptedPassword = EncryptionUtil.decrypt(activeAccount['password'] ?? '');
         activeService = WebDAVService(
           id: activeAccount['id'],
           url: activeAccount['url'],
           username: activeAccount['username'] ?? '',
-          password: activeAccount['password'] ?? '',
+          password: decryptedPassword,
           remoteBasePath: activeAccount['path'] ?? '',
         );
 
@@ -80,11 +83,12 @@ class HomeLogic extends GetxController {
   // 修改切换存储服务的方法
   Future<void> switchStorageService(Map<String, dynamic> account) async {
     try {
+      final decryptedPassword = EncryptionUtil.decrypt(account['password'] ?? '');
       activeService = WebDAVService(
         id: account['id'],
         url: account['url'],
         username: account['username'] ?? '',
-        password: account['password'] ?? '',
+        password: decryptedPassword,
         remoteBasePath: account['path'] ?? '',
       );
 

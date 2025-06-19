@@ -130,7 +130,6 @@ class AddAccountLogic extends GetxController {
         // 添加新账户
         accounts.add(jsonEncode(accountMap));
         await prefs.setStringList('accounts', accounts);
-        await prefs.setString('activeAccount', accountMap['id']!);
         final homeLogic = !Get.isRegistered<HomeLogic>() ? Get.put(HomeLogic()) : Get.find<HomeLogic>();
         await homeLogic.switchStorageService(accountMap);
       }

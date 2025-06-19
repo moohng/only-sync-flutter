@@ -54,10 +54,10 @@ class MainPage extends StatelessWidget {
     return Scaffold(
       body: Obx(() => IndexedStack(
             index: controller.tabIndex.value,
-            children: const [
+            children: [
               HomePage(),
-              SyncPage(),
-              SettingsPage(),
+              const SyncPage(),
+              const SettingsPage(),
             ],
           )),
       bottomNavigationBar: Obx(() => NavigationBar(

@@ -1,7 +1,7 @@
 import 'package:encrypt/encrypt.dart';
 
 class EncryptionUtil {
-  static final _key = Key.fromLength(32); // AES-256
+  static final _key = Key.fromUtf8('uyru456wqwkj3ng4de67aw23lk98uyde'); // AES-256
   static final _iv = IV.fromLength(16);
   static final _encrypter = Encrypter(AES(_key));
 
