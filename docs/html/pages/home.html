@@ -72,14 +72,16 @@
             <div class="px-4 mb-4">
                 <h2 class="text-lg font-semibold mb-2">2023年12月</h2>
                 <div class="grid grid-cols-3 gap-1">
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90 relative">
                         <img src="https://picsum.photos/seed/1/300/300" class="w-full h-full object-cover">
+                        <i class="fas fa-cloud text-white text-xs absolute bottom-1 right-1 bg-black/20 p-1 rounded-full"></i>
                     </div>
                     <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
                         <img src="https://picsum.photos/seed/2/300/300" class="w-full h-full object-cover">
                     </div>
-                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90">
+                    <div class="aspect-square bg-gray-200 rounded-md overflow-hidden transition-all hover:opacity-90 relative">
                         <img src="https://picsum.photos/seed/3/300/300" class="w-full h-full object-cover">
+                        <i class="fas fa-cloud text-white text-xs absolute bottom-1 right-1 bg-black/20 p-1 rounded-full"></i>
                     </div>
                 </div>
             </div>
@@ -162,6 +164,18 @@
 
         // 为所有照片添加点击事件
         document.addEventListener('DOMContentLoaded', function() {
+            const albumButtons = document.querySelectorAll('.px-4.py-2.rounded-full');
+            albumButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    albumButtons.forEach(btn => {
+                        btn.classList.remove('bg-blue-500', 'text-white');
+                        btn.classList.add('bg-gray-100', 'text-gray-700');
+                    });
+                    this.classList.add('bg-blue-500', 'text-white');
+                    this.classList.remove('bg-gray-100', 'text-gray-700');
+                });
+            });
+
             const photoElements = document.querySelectorAll('.aspect-square');
             photoElements.forEach(photo => {
                 photo.addEventListener('click', function() {

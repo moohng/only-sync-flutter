@@ -19,89 +19,46 @@
     
     <div class="p-4 pt-12 h-full">
         <div class="flex justify-between items-center mb-4">
-            <h1 class="text-2xl font-bold">备份状态</h1>
-
+            <h1 class="text-2xl font-bold">同步任务</h1>
+            <a href="sync_history.html" class="text-gray-600 text-xl">
+                <i class="fas fa-history"></i>
+            </a>
         </div>
 
-        <!-- 未配置状态 -->
-        <div class="flex-1 flex flex-col items-center justify-center text-center" id="empty-state">
-            <div class="bg-gray-50 rounded-2xl p-8 max-w-sm mx-auto mb-4">
-                <i class="fas fa-cloud text-gray-300 text-5xl mb-4"></i>
-                <h3 class="text-lg font-semibold mb-2">开始备份您的照片</h3>
-                <p class="text-gray-500 text-sm mb-4">请先配置 WebDAV 服务以开始自动备份您的照片到云端</p>
-                <a href="webdav.html" class="inline-block bg-blue-500 text-white px-6 py-2 rounded-lg">
-                    配置 WebDAV
-                </a>
+        <!-- 任务列表 -->
+        <div id="sync-tasks" class="space-y-4">
+            <!-- Sample Task Item -->
+            <div class="bg-gray-50 rounded-lg p-4 relative" draggable="true" id="task-1">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-camera text-blue-500 text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold">相机照片备份</p>
+                            <p class="text-sm text-gray-500">上次同步: 今天 10:45</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm font-medium text-green-600">已同步</span>
+                        <button class="text-gray-400 w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center" onclick="toggleTaskMenu('task-1')">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Task Menu -->
+                <div id="task-1-menu" class="absolute right-4 top-14 mt-2 w-40 bg-white rounded-lg shadow-lg border hidden z-10">
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="resumeTask('task-1')"><i class="fas fa-sync w-4 mr-2"></i>立即同步</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-red-500 hover:bg-red-50" onclick="deleteTask('task-1')"><i class="fas fa-trash-alt w-4 mr-2"></i>删除任务</a>
+                </div>
             </div>
         </div>
 
-        <!-- 同步任务列表 -->
-        <div class="space-y-4" id="sync-tasks">
-            <!-- 添加拖拽提示 -->
-            <div class="text-center text-sm text-gray-500 mb-2">
-                <i class="fas fa-arrows-alt-v mr-1"></i>长按并拖动可调整任务优先级
-            </div>
-            
-            <!-- 进行中的同步任务 -->
-            <div class="bg-blue-50 rounded-lg p-4 card-shadow" draggable="true">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center space-x-2">
-                        <i class="fas fa-grip-lines text-gray-400 mr-2"></i>
-                        <i class="fas fa-camera text-blue-500"></i>
-                        <span class="font-medium">相机胶卷</span>
-                    </div>
-                    <button class="text-gray-400 relative" onclick="toggleTaskMenu('camera-task')">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <!-- 任务操作菜单 -->
-                    <div class="hidden absolute right-4 mt-8 w-36 bg-white rounded-lg shadow-lg border py-1 z-50" id="camera-task-menu">
-                        <button onclick="pauseTask('camera-task')" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
-                            <i class="fas fa-pause mr-2"></i>暂停同步
-                        </button>
-                        <button onclick="deleteTask('camera-task')" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 text-red-500">
-                            <i class="fas fa-trash mr-2"></i>删除任务
-                        </button>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm text-gray-600">正在同步</span>
-                    <span class="text-blue-500">75%</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-blue-500 h-2 rounded-full" style="width: 75%"></div>
-                </div>
-                <div class="text-xs text-gray-500 mt-2">
-                    已同步 750/1000 张照片
-                </div>
-            </div>
-
-            <!-- 已暂停的同步任务 -->
-            <div class="bg-white border rounded-lg p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center space-x-2">
-                        <i class="fas fa-heart text-red-500"></i>
-                        <span class="font-medium">我的收藏</span>
-                    </div>
-                    <button class="text-gray-400 relative" onclick="toggleTaskMenu('favorite-task')">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <!-- 任务操作菜单 -->
-                    <div class="hidden absolute right-4 mt-8 w-36 bg-white rounded-lg shadow-lg border py-1 z-50" id="favorite-task-menu">
-                        <button onclick="resumeTask('favorite-task')" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
-                            <i class="fas fa-play mr-2"></i>继续同步
-                        </button>
-                        <button onclick="deleteTask('favorite-task')" class="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 text-red-500">
-                            <i class="fas fa-trash mr-2"></i>删除任务
-                        </button>
-                    </div>
-                </div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-500">已暂停 - 已同步 42/156 张照片</span>
-                    <button class="text-blue-500" onclick="resumeTask('favorite-task')">
-                        <i class="fas fa-play"></i>
-                    </button>
-                </div>
-            </div>
+        <!-- 空状态 -->
+        <div id="empty-state" class="flex flex-col items-center justify-center text-center pt-16">
+            <i class="fas fa-sync-alt text-6xl text-gray-300"></i>
+            <p class="mt-4 text-gray-500">还没有同步任务</p>
+            <p class="mt-1 text-sm text-gray-400">点击右下角按钮添加一个</p>
         </div>
 
         <!-- 删除确认弹窗 -->
