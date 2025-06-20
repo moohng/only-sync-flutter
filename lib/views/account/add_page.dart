@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:only_sync_flutter/routes/route.dart';
 import 'package:only_sync_flutter/utils/encryption_util.dart';
 import 'package:uuid/uuid.dart';
@@ -313,15 +314,21 @@ class AddAccountPage extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () async {
-              final String? scanResult = await Get.toNamed(Routes.scanPage);
-              // 回填入表单
-              if (scanResult != null && scanResult.isNotEmpty) {
-                final scanInfo = jsonDecode(scanResult);
-                logic.urlController.text = scanInfo['url'] ?? '';
-                logic.usernameController.text = scanInfo['username'] ?? '';
-                // 解密密码
-                final decryptedPassword = EncryptionUtil.decrypt(scanInfo['password'] ?? '');
-                logic.passwordController.text = decryptedPassword;
+              try {
+                var scanResult = await Get.toNamed(Routes.scanPage);
+                log(scanResult);
+                // 回填入表单
+                if (scanResult != null && scanResult.isNotEmpty) {
+                  final scanInfo = jsonDecode(scanResult);
+                  logic.urlController.text = scanInfo['url'] ?? '';
+                  logic.usernameController.text = scanInfo['username'] ?? '';
+                  // 解密密码
+                  final decryptedPassword = EncryptionUtil.decrypt(scanInfo['password'] ?? '');
+                  logic.passwordController.text = decryptedPassword;
+                }
+              } catch (e) {
+                // 处理错误
+                log('路由跳转错误: $e');
               }
             },
             icon: Icon(Icons.camera_alt_outlined, color: theme.primaryColor),

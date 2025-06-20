@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -15,6 +17,7 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   void initState() {
+    log('message: scan_page initState');
     super.initState();
     controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
@@ -39,8 +42,9 @@ class _ScanPageState extends State<ScanPage> {
 
               final List<Barcode> barcodes = capture.barcodes;
               if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
-                print('扫描的二维码信息：${barcodes.first.rawValue}');
-                Get.back(result: barcodes.first.rawValue);
+                log('扫描的二维码信息：${barcodes.first.rawValue}');
+                Get.back(result: barcodes.first.rawValue ?? '');
+                return;
               }
 
               // 设置一个延时，比如1秒后才能处理下一次扫描
@@ -123,9 +127,10 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     controller.dispose();
     super.dispose();
+    await controller.dispose();
   }
 }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -62,7 +63,7 @@ class HomeLogic extends GetxController {
       }
     } catch (e) {
       AppStore.to.updateService('');
-      print('初始化存储服务失败: $e');
+      log('初始化存储服务失败: $e');
     }
   }
 
@@ -76,7 +77,7 @@ class HomeLogic extends GetxController {
       }
     } catch (e) {
       AppStore.to.updateService('');
-      print('服务不可用: $e');
+      log('服务不可用: $e');
     }
   }
 
@@ -100,7 +101,7 @@ class HomeLogic extends GetxController {
       mediaController.refresh();
     } catch (e) {
       AppStore.to.updateService('');
-      print('切换存储服务失败: $e');
+      log('切换存储服务失败: $e');
       Get.snackbar('错误', '切换存储服务失败：$e');
     }
   }

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:photo_manager/photo_manager.dart';
 import 'package:sqflite/sqflite.dart';
 import '../media/media_manager.dart';
@@ -84,7 +86,7 @@ class MediaDao {
       'last_sync_time': DateTime.now().millisecondsSinceEpoch,
     };
 
-    print('准备插入数据: $data');
+    log('准备插入数据: $data');
 
     final id = await db.insert(
       mediaFilesTable,
@@ -92,17 +94,17 @@ class MediaDao {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
 
-    print('插入结果ID: $id');
+    log('插入结果ID: $id');
     return id;
   }
 
   Future<MediaDRO?> getFileInfo(String path, String? accountId) async {
     final db = await dbHelper.database;
-    print('查询参数 - path: $path, accountId: $accountId');
+    log('查询参数 - path: $path, accountId: $accountId');
 
     // 先查询所有数据，看看数据库中是否有数据
     final allData = await db.query(mediaFilesTable);
-    print('数据库中所有数据: ${allData.length}条');
+    log('数据库中所有数据: ${allData.length}条');
 
     final List<Map<String, dynamic>> maps = await db.query(
       mediaFilesTable,
@@ -110,10 +112,10 @@ class MediaDao {
       whereArgs: accountId == null ? [path] : [path, accountId],
     );
 
-    print('查询SQL: SELECT * FROM $mediaFilesTable WHERE path = "$path" AND account_id = "$accountId"');
-    print('查询结果: ${maps.length}条');
+    log('查询SQL: SELECT * FROM $mediaFilesTable WHERE path = "$path" AND account_id = "$accountId"');
+    log('查询结果: ${maps.length}条');
     if (!maps.isEmpty) {
-      print('首条数据: ${maps.first}');
+      log('首条数据: ${maps.first}');
     }
 
     if (maps.isEmpty) return null;
@@ -145,8 +147,8 @@ class MediaDao {
       whereArgs: accountId == null ? paths : [...paths, accountId],
     );
 
-    print('批量查询 ${paths.length} 个文件');
-    print('查询结果: ${maps.length}条');
+    log('批量查询 ${paths.length} 个文件');
+    log('查询结果: ${maps.length}条');
 
     // 将结果转换为 Map
     return Map.fromEntries(

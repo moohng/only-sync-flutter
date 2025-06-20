@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -24,7 +26,7 @@ class DatabaseHelper {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    print('创建数据库表...');
+    log('创建数据库表...');
     await db.execute('''
       CREATE TABLE media_files (
         id TEXT PRIMARY KEY,
@@ -42,7 +44,7 @@ class DatabaseHelper {
         last_sync_time INTEGER
       )
     ''');
-    print('数据库表创建完成');
+    log('数据库表创建完成');
 
     // 创建索引
     await db.execute('CREATE INDEX idx_path ON media_files(path)');
@@ -53,9 +55,9 @@ class DatabaseHelper {
   Future<void> debugCheckTable() async {
     final db = await database;
     final tables = await db.query('sqlite_master', where: 'type = ?', whereArgs: ['table']);
-    print('数据库中的表: ${tables.map((e) => e['name'])}');
+    log('数据库中的表: ${tables.map((e) => e['name'])}');
 
     final tableInfo = await db.rawQuery('PRAGMA table_info(media_files)');
-    print('表结构: $tableInfo');
+    log('表结构: $tableInfo');
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
@@ -98,7 +100,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
         await loadNextBatch();
       }
     } catch (e) {
-      print('初始化失败: $e');
+      log('初始化失败: $e');
       Get.snackbar('错误', '初始化失败：$e');
     }
   }
@@ -113,7 +115,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
         page: page.value,
         pageSize: pageSize,
       );
-      print('============== ${files.length}');
+      log('============== ${files.length}');
 
       if (files.isEmpty) {
         hasMore.value = false;
@@ -131,7 +133,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
         }
       }
     } catch (e) {
-      print('加载失败: $e');
+      log('加载失败: $e');
     } finally {
       isLoadingMore.value = false;
       isFirstLoad.value = false;

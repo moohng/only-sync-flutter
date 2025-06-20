@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:encrypt/encrypt.dart';
 
 class EncryptionUtil {
@@ -21,7 +23,7 @@ class EncryptionUtil {
       final encrypted = Encrypted.fromBase64(encryptedText);
       return _encrypter.decrypt(encrypted, iv: _iv);
     } catch (e) {
-      print('解密失败: $e');
+      log('解密失败: $e');
       return '';
     }
   }

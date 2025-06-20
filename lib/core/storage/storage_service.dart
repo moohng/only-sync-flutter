@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'package:get/get_utils/src/platform/platform.dart';
 import 'package:webdav_client/webdav_client.dart' show newClient, Client;
@@ -103,7 +104,7 @@ class WebDAVService extends RemoteStorageService {
       await client.readProps('$remoteBasePath/$remotePath');
       return true;
     } catch (e) {
-      print('检查文件存在失败: $e');
+      log('检查文件存在失败: $e');
       return false;
     }
   }

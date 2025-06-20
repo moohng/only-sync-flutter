@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
@@ -122,7 +123,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
         },
       );
     } catch (e) {
-      print('视频初始化失败: $e');
+      log('视频初始化失败: $e');
       _cleanupVideo();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

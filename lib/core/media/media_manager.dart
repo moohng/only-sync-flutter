@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'dart:ui';
 import 'package:intl/intl.dart';
@@ -156,7 +157,7 @@ class MediaManager {
       await _mediaDao.dbHelper.debugCheckTable();
 
       final assets = await album.getAssetListPaged(page: page, size: pageSize);
-      print('获取到 ${assets.length} 个媒体文件');
+      log('获取到 ${assets.length} 个媒体文件');
 
       final List<AssetEntityImageInfo> mediaFiles = [];
       final List<String> paths = [];
@@ -217,7 +218,7 @@ class MediaManager {
 
       return mediaFiles;
     } catch (e) {
-      print('获取媒体文件失败: $e');
+      log('获取媒体文件失败: $e');
       return [];
     }
   }
@@ -252,7 +253,7 @@ class MediaManager {
         // 添加小延迟避免过度占用资源
         await Future.delayed(const Duration(milliseconds: 100));
       } catch (e) {
-        print('检查同步状态失败: $e');
+        log('检查同步状态失败: $e');
         // 出错时也要移除，避免卡住队列
         if (_syncCheckQueue.isNotEmpty) {
           _syncCheckQueue.remove(_syncCheckQueue.keys.first);
@@ -296,7 +297,7 @@ class MediaManager {
         remotePath: remotePath,
       );
     } catch (e) {
-      print('同步失败: $e');
+      log('同步失败: $e');
       return file.copyWith(
         syncStatus: SyncStatus.failed,
         syncError: e.toString(),
@@ -335,7 +336,7 @@ class MediaManager {
         // 添加延迟避免占用过多资源
         await Future.delayed(const Duration(milliseconds: 100));
       } catch (e) {
-        print('后台同步失败: $e');
+        log('后台同步失败: $e');
         if (_syncQueue.isNotEmpty) {
           _syncQueue.remove(_syncQueue.keys.first);
         }
@@ -363,7 +364,7 @@ class MediaManager {
         _thumbnailQueue.remove(entry.key);
         await Future.delayed(const Duration(milliseconds: 50));
       } catch (e) {
-        print('生成缩略图失败: $e');
+        log('生成缩略图失败: $e');
         if (_thumbnailQueue.isNotEmpty) {
           _thumbnailQueue.remove(_thumbnailQueue.keys.first);
         }
@@ -388,7 +389,7 @@ class MediaManager {
 
       return thumbnailFile;
     } catch (e) {
-      print('生成缩略图失败: $e');
+      log('生成缩略图失败: $e');
       return null;
     }
   }
