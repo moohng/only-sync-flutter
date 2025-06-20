@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:extended_image/extended_image.dart';
 import 'package:only_sync_flutter/routes/route.dart';
 import 'package:only_sync_flutter/utils/encryption_util.dart';
 import 'package:uuid/uuid.dart';
@@ -315,10 +316,10 @@ class AddAccountPage extends StatelessWidget {
           IconButton(
             onPressed: () async {
               try {
-                var scanResult = await Get.toNamed(Routes.scanPage);
-                log(scanResult);
+                dynamic scanResult = await Get.toNamed(Routes.scanPage);
                 // 回填入表单
-                if (scanResult != null && scanResult.isNotEmpty) {
+                if (scanResult != null && scanResult is String && scanResult.isNotEmpty) {
+                  log('扫码返回参数：$scanResult');
                   final scanInfo = jsonDecode(scanResult);
                   logic.urlController.text = scanInfo['url'] ?? '';
                   logic.usernameController.text = scanInfo['username'] ?? '';
