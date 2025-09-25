@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
@@ -32,7 +33,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
     super.initState();
     _pageController = ExtendedPageController(initialPage: widget.initialIndex);
 
-    if (widget.files[widget.initialIndex].type == MediaType.video) {
+    if (widget.files[widget.initialIndex].asset.type == AssetType.video) {
       _initializeVideoPlayer(widget.files[widget.initialIndex]);
     }
   }
@@ -53,7 +54,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
 
     for (final index in indexes) {
       final file = widget.files[index];
-      if (file.type == MediaType.image) {
+      if (file.asset.type == AssetType.image) {
         precacheImage(
           AssetEntityImageProvider(
             file.asset,
@@ -88,9 +89,9 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
       // 清理之前的视频控制器
       _cleanupVideo();
 
-      if (file.type != MediaType.video) return;
+      if (file.asset.type != AssetType.video) return;
 
-      final videoFile = File(file.path);
+      final videoFile = File((await file.asset.file)!.path);
       if (!await videoFile.exists()) {
         throw Exception('视频文件不存在');
       }
@@ -153,7 +154,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
         onPageChanged: (index) {
           final file = widget.files[index];
           _preloadImages(index);
-          if (file.type == MediaType.video) {
+          if (file.asset.type == AssetType.video) {
             _initializeVideoPlayer(file);
           } else {
             _cleanupVideo();
@@ -161,7 +162,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
         },
         itemBuilder: (context, index) {
           final file = widget.files[index];
-          if (file.type == MediaType.video) {
+          if (file.asset.type == AssetType.video) {
             return _buildVideoPreview(file);
           }
           return _buildImagePreview(file);
@@ -203,7 +204,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
 
   Widget _buildImagePreview(AssetEntityImageInfo file) {
     return Hero(
-      tag: 'media_${file.path}',
+      tag: 'media_${file.asset.id}',
       child: ExtendedImage(
         image: AssetEntityImageProvider(file.asset, isOriginal: true),
         fit: BoxFit.contain,

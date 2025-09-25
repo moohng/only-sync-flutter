@@ -24,7 +24,7 @@ class AlbumState {
 }
 
 class MediaGridController extends GetxController with GetTickerProviderStateMixin {
-  static const int pageSize = 30;
+  static const int pageSize = 40;
 
   final mediaFiles = <AssetEntityImageInfo>[].obs;
   final isLoading = false.obs;
@@ -65,7 +65,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   }
 
   void _updateFileStatus(AssetEntityImageInfo updatedFile) {
-    final index = mediaFiles.indexWhere((f) => f.path == updatedFile.path);
+    final index = mediaFiles.indexWhere((f) => f.asset.id == updatedFile.asset.id);
     if (index != -1) {
       mediaFiles[index] = updatedFile;
       // 使用 refresh() 而不是 update() 避免整个列表重建
@@ -166,7 +166,8 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
 
   /// 将当前相册所有未同步的文件添加到同步队列
   Future<void> addSelectAlbumFiles() async {
-    final albumFiles = await _mediaManager.getMediaFiles(album: selectedAlbum.value!);
+    final albumFiles = await _mediaManager.getMediaFiles(
+        album: selectedAlbum.value!, pageSize: await selectedAlbum.value!.assetCountAsync);
     for (final file in albumFiles) {
       // 添加到后台同步队列
       if (file.syncStatus != SyncStatus.synced) {
@@ -179,7 +180,7 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   Map<String, List<AssetEntityImageInfo>> get groupedMediaFiles {
     final grouped = <String, List<AssetEntityImageInfo>>{};
     for (final file in mediaFiles) {
-      final month = DateFormat('yyyy年MM月').format(file.modifiedTime);
+      final month = DateFormat('yyyy年MM月').format(file.asset.modifiedDateTime);
       if (!grouped.containsKey(month)) {
         grouped[month] = [];
       }
@@ -373,12 +374,12 @@ class MediaGrid extends StatelessWidget {
                 shrinkWrap: false,
                 slivers: [
                   // 添加一个固定的背景色sliver
-                  SliverToBoxAdapter(
-                    child: Container(
-                      color: backgroundColor,
-                      height: 0,
-                    ),
-                  ),
+                  // SliverToBoxAdapter(
+                  //   child: Container(
+                  //     color: backgroundColor,
+                  //     height: 0,
+                  //   ),
+                  // ),
                   ...grouped.entries.map((entry) => SliverMediaGroup(
                         key: ValueKey(entry.key), // 添加唯一键以提高渲染性能
                         month: entry.key,
@@ -451,7 +452,7 @@ class SliverMediaGroup extends StatelessWidget {
             itemBuilder: (context, index) => FutureBuilder<Uint8List?>(
                 future: files[index].thumbnail,
                 builder: (context, snapshot) => MediaGridItem(
-                      key: ValueKey(files[index].path), // 添加唯一键以提高渲染性能
+                      key: ValueKey(files[index].asset.id), // 添加唯一键以提高渲染性能
                       file: files[index],
                       thumb: snapshot.data,
                       onSync: () => Get.find<MediaGridController>().addFile(files[index]),

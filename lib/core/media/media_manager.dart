@@ -9,21 +9,12 @@ import 'package:photo_manager/photo_manager.dart';
 import '../storage/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 媒体文件类型
-enum MediaType { image, video }
-
 /// 同步状态
 enum SyncStatus { notSynced, willSync, syncing, synced, failed }
 
 /// 媒体文件信息
 class AssetEntityImageInfo {
   final AssetEntity asset;
-  final String path;
-  final String name;
-  final MediaType type;
-  final int size;
-  final DateTime modifiedTime;
-  final DateTime createdTime;
   final SyncStatus syncStatus;
   final String? syncError;
   final String? remotePath;
@@ -31,12 +22,6 @@ class AssetEntityImageInfo {
 
   AssetEntityImageInfo({
     required this.asset,
-    required this.path,
-    required this.name,
-    required this.type,
-    required this.size,
-    required this.modifiedTime,
-    required this.createdTime,
     required this.syncStatus,
     required this.thumbnail,
     this.syncError,
@@ -50,12 +35,6 @@ class AssetEntityImageInfo {
   }) {
     return AssetEntityImageInfo(
       asset: asset,
-      path: path,
-      name: name,
-      type: type,
-      size: size,
-      modifiedTime: modifiedTime,
-      createdTime: createdTime,
       thumbnail: thumbnail,
       syncStatus: syncStatus ?? this.syncStatus,
       syncError: syncError ?? this.syncError,
@@ -115,47 +94,38 @@ class MediaManager {
   Future<List<AssetEntityImageInfo>> getMediaFiles({
     required AssetPathEntity album,
     int page = 0,
-    int pageSize = 30,
+    int pageSize = 40,
   }) async {
     try {
-      // 调试数据库表结构
-      await _mediaDao.dbHelper.debugCheckTable();
-
       final assets = await album.getAssetListPaged(page: page, size: pageSize);
       log('获取到 ${assets.length} 个媒体文件');
 
-      final List<AssetEntityImageInfo> mediaFiles = [];
-      final List<String> paths = [];
-      final Map<String, AssetEntity> assetMap = {};
-
-      for (final asset in assets) {
-        final file = await asset.file;
-        if (file == null) continue;
-        paths.add(file.path);
-        assetMap[file.path] = asset;
+      if (_storageService == null || _storageService?.id == null) {
+        return assets
+            .map((e) => AssetEntityImageInfo(
+                  asset: e,
+                  syncStatus: SyncStatus.notSynced,
+                  remotePath: null,
+                  thumbnail: thumbCache.getThumb(e),
+                ))
+            .toList();
       }
 
+      final List<AssetEntityImageInfo> mediaFiles = [];
+      // 调试数据库表结构
+      await _mediaDao.dbHelper.debugCheckTable();
       // 批量查询数据库
-      final cachedInfoMap = await _mediaDao.batchGetFileInfo(paths, _storageService?.id);
+      final cachedInfoMap = await _mediaDao.batchGetFileInfo(assets.map((e) => e.id).toList(), _storageService?.id);
 
-      for (final path in paths) {
-        final asset = assetMap[path]!;
-        final file = await asset.file;
-
-        if (cachedInfoMap.containsKey(path)) {
-          mediaFiles
-              .add(cachedInfoMap[path]!.toAssetEntityImageInfo(asset: asset, thumbnail: thumbCache.getThumb(asset)));
+      for (final asset in assets) {
+        if (cachedInfoMap.containsKey(asset.id)) {
+          mediaFiles.add(
+              cachedInfoMap[asset.id]!.toAssetEntityImageInfo(asset: asset, thumbnail: thumbCache.getThumb(asset)));
           continue;
         }
 
         final mediaFile = AssetEntityImageInfo(
           asset: asset,
-          path: file!.path,
-          name: asset.title ?? 'Unknown',
-          type: asset.type == AssetType.video ? MediaType.video : MediaType.image,
-          size: file.lengthSync(),
-          modifiedTime: asset.modifiedDateTime,
-          createdTime: asset.createDateTime,
           syncStatus: SyncStatus.notSynced,
           remotePath: null,
           thumbnail: thumbCache.getThumb(asset),
@@ -166,8 +136,8 @@ class MediaManager {
 
       // 批量保存新记录
       if (mediaFiles.isNotEmpty) {
-        await Future.wait(mediaFiles
-            .where((f) => !cachedInfoMap.containsKey(f.path))
+        Future.wait(mediaFiles
+            .where((f) => !cachedInfoMap.containsKey(f.asset.id))
             .map((f) => _mediaDao.insertOrUpdate(f, _storageService?.id)));
       }
 
@@ -182,9 +152,9 @@ class MediaManager {
   void Function(AssetEntityImageInfo file)? onSyncStatusChanged;
 
   /// 同步单个文件
-  Future<AssetEntityImageInfo> syncFile(AssetEntityImageInfo file) async {
+  Future<AssetEntityImageInfo> syncFile(AssetEntityImageInfo imgInfo) async {
     if (_storageService == null) {
-      return file.copyWith(
+      return imgInfo.copyWith(
         syncStatus: SyncStatus.failed,
         syncError: '存储服务未初始化',
       );
@@ -192,28 +162,28 @@ class MediaManager {
 
     try {
       // 创建按年月组织的远程路径
-      final dateStr = DateFormat('yyyy/MM').format(file.modifiedTime);
-      final remotePath = '$dateStr/${file.name}';
+      final dateStr = DateFormat('yyyy/MM').format(imgInfo.asset.modifiedDateTime);
+      final remotePath = '$dateStr/${imgInfo.asset.title ?? 'Unknown'}';
 
       // 检查文件是否已经同步
       if (await _storageService!.checkFileExists(remotePath)) {
-        return file.copyWith(
+        return imgInfo.copyWith(
           syncStatus: SyncStatus.synced,
           remotePath: remotePath,
         );
       }
 
       // 上传文件
-      await _storageService!.uploadFile(file.path, remotePath);
+      await _storageService!.uploadFile((await imgInfo.asset.file)!.path, remotePath);
 
-      return file.copyWith(
+      return imgInfo.copyWith(
         syncStatus: SyncStatus.synced,
         syncError: null,
         remotePath: remotePath,
       );
     } catch (e) {
       log('同步失败: $e');
-      return file.copyWith(
+      return imgInfo.copyWith(
         syncStatus: SyncStatus.failed,
         syncError: e.toString(),
       );
@@ -231,12 +201,12 @@ class MediaManager {
     while (_syncQueue.isNotEmpty) {
       try {
         final entry = _syncQueue.entries.first;
-        final file = entry.value;
+        final imgInfo = entry.value;
 
-        onSyncStatusChanged?.call(file.copyWith(syncStatus: SyncStatus.syncing));
-        final result = await syncFile(file);
+        onSyncStatusChanged?.call(imgInfo.copyWith(syncStatus: SyncStatus.syncing));
+        final result = await syncFile(imgInfo);
         await _mediaDao.updateSyncStatus(
-          file.path,
+          (await imgInfo.asset.file)!.path,
           result.syncStatus,
           result.syncError,
           result.remotePath,
@@ -258,11 +228,11 @@ class MediaManager {
     _isSyncing = false;
   }
 
-  Future<void> addToSyncQueue(AssetEntityImageInfo file) async {
-    onSyncStatusChanged?.call(file.copyWith(syncStatus: SyncStatus.willSync));
+  Future<void> addToSyncQueue(AssetEntityImageInfo imgInfo) async {
+    onSyncStatusChanged?.call(imgInfo.copyWith(syncStatus: SyncStatus.willSync));
 
     // 添加到同步队列
-    _syncQueue.putIfAbsent(file.path, () => file);
+    _syncQueue.putIfAbsent((await imgInfo.asset.file)!.path, () => imgInfo);
 
     _startBackgroundSync();
   }
@@ -270,12 +240,12 @@ class MediaManager {
 
 class SyncTask {
   final String id;
-  final AssetEntityImageInfo file;
+  final AssetEntityImageInfo imgInfo;
   final VoidCallback? onComplete;
 
   SyncTask({
     required this.id,
-    required this.file,
+    required this.imgInfo,
     this.onComplete,
   });
 }

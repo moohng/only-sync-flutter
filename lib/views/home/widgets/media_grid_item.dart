@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -6,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:only_sync_flutter/core/media/media_manager.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:only_sync_flutter/core/store/app_store.dart';
-import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
+import 'package:photo_manager/photo_manager.dart';
 
 class MediaGridItem extends StatefulWidget {
   final AssetEntityImageInfo file;
@@ -96,7 +95,7 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
                   () => AppStore.to.currentServiceId.value.isNotEmpty ? _buildSyncButton(context) : const SizedBox()),
             ),
             // 视频时长标识
-            if (widget.file.type == MediaType.video)
+            if (widget.file.asset.type == AssetType.video)
               FutureBuilder<int>(
                 future: Future.value(widget.file.asset.duration),
                 builder: (context, snapshot) {
