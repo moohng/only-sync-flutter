@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,12 +10,14 @@ import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 
 class MediaGridItem extends StatefulWidget {
   final AssetEntityImageInfo file;
+  final Uint8List? thumb;
   final VoidCallback? onSync;
   final VoidCallback? onTap;
 
   const MediaGridItem({
     super.key,
     required this.file,
+    this.thumb,
     this.onSync,
     this.onTap,
   });
@@ -76,8 +79,9 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    return Hero(
-      tag: 'media_${widget.file.path}',
+    // 使用HeroMode禁用Hero动画在滚动时的效果，以避免UI碎裂
+    return HeroMode(
+      enabled: false, // 暂时禁用Hero动画，这可以解决滚动时的UI碎裂问题
       child: GestureDetector(
         onTap: widget.onTap,
         child: Stack(
@@ -104,10 +108,10 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
                     right: 4,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      // decoration: BoxDecoration(
-                      //   color: Colors.black.withOpacity(0.7),
-                      //   borderRadius: BorderRadius.circular(4),
-                      // ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                       child: Text(
                         _formatDuration(Duration(seconds: snapshot.data!)),
                         style: const TextStyle(
@@ -126,16 +130,18 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
                 animation: _syncAnimation,
                 builder: (context, child) {
                   return Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.blue.withAlpha(76),
-                            Colors.blue.withAlpha(25),
-                          ],
-                          stops: [0.0, _syncAnimation.value],
+                    child: ClipRRect(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.blue.withAlpha(76),
+                              Colors.blue.withAlpha(25),
+                            ],
+                            stops: [0.0, _syncAnimation.value],
+                          ),
                         ),
                       ),
                     ),
@@ -182,27 +188,26 @@ class _MediaGridItemState extends State<MediaGridItem> with SingleTickerProvider
   }
 
   Widget _buildMediaPreview() {
-    final asset = widget.file.asset;
-
-    // 优先使用缓存的缩略图
-    if (widget.file.thumbnailPath != null) {
-      return ExtendedImage.file(
-        File(widget.file.thumbnailPath!),
-        fit: BoxFit.cover,
-        enableLoadState: true,
-        // ...其他配置保持不变
-      );
+    if (widget.thumb == null) {
+      return const SizedBox();
     }
-
-    // 回退到原来的方案
-    return ExtendedImage(
-      image: AssetEntityImageProvider(
-        asset,
-        thumbnailSize: MediaManager.thumbnailSize,
-        isOriginal: false,
-      ),
+    // 使用缓存的缩略图
+    return ExtendedImage.memory(
+      widget.thumb!,
       fit: BoxFit.cover,
-      // ...其他配置保持不变
+      enableLoadState: true,
+      // cache: true,
+      clearMemoryCacheWhenDispose: true,
+      loadStateChanged: (ExtendedImageState state) {
+        switch (state.extendedImageLoadState) {
+          case LoadState.loading:
+            return const Center(child: CircularProgressIndicator.adaptive(strokeWidth: 1.5));
+          case LoadState.failed:
+            return const Icon(Icons.error_outline, color: Colors.red);
+          case LoadState.completed:
+            return state.completedWidget;
+        }
+      },
     );
   }
 

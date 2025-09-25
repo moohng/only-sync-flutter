@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -22,8 +23,7 @@ class AlbumState {
   });
 }
 
-class MediaGridController extends GetxController
-    with GetTickerProviderStateMixin {
+class MediaGridController extends GetxController with GetTickerProviderStateMixin {
   static const int pageSize = 30;
 
   final mediaFiles = <AssetEntityImageInfo>[].obs;
@@ -79,8 +79,7 @@ class MediaGridController extends GetxController
     super.onClose();
   }
 
-  void updateStorageService(RemoteStorageService? service,
-      {bool isAvailable = true}) {
+  void updateStorageService(RemoteStorageService? service, {bool isAvailable = true}) {
     _mediaManager.updateStorageService(service);
     isServiceAvailable.value = isAvailable;
   }
@@ -108,10 +107,7 @@ class MediaGridController extends GetxController
   }
 
   Future<void> loadNextBatch() async {
-    if (isLoading.value ||
-        isLoadingMore.value ||
-        !hasMore.value ||
-        selectedAlbum.value == null) return;
+    if (isLoading.value || isLoadingMore.value || !hasMore.value || selectedAlbum.value == null) return;
     isLoadingMore.value = true;
 
     try {
@@ -170,8 +166,7 @@ class MediaGridController extends GetxController
 
   /// 将当前相册所有未同步的文件添加到同步队列
   Future<void> addSelectAlbumFiles() async {
-    final albumFiles =
-        await _mediaManager.getMediaFiles(album: selectedAlbum.value!);
+    final albumFiles = await _mediaManager.getMediaFiles(album: selectedAlbum.value!);
     for (final file in albumFiles) {
       // 添加到后台同步队列
       if (file.syncStatus != SyncStatus.synced) {
@@ -190,8 +185,7 @@ class MediaGridController extends GetxController
       }
       grouped[month]!.add(file);
     }
-    return Map.fromEntries(
-        grouped.entries.toList()..sort((a, b) => b.key.compareTo(a.key)));
+    return Map.fromEntries(grouped.entries.toList()..sort((a, b) => b.key.compareTo(a.key)));
   }
 
   void showPreview(List<AssetEntityImageInfo> files, int initialIndex) {
@@ -253,20 +247,18 @@ class MediaGrid extends StatelessWidget {
 
     // 添加滚动监听
     scrollController.addListener(() {
-      if (scrollController.position.pixels >=
-          scrollController.position.maxScrollExtent - 500) {
+      if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 500) {
         controller.loadNextBatch();
       }
     });
 
     return GetBuilder<MediaGridController>(
-      init: MediaGridController(),
+      init: controller, // 复用已创建的控制器实例，避免重复创建
       builder: (controller) {
         return Obx(() => Column(
               children: [
                 // 相册选择器
-                if (controller.albums.isNotEmpty)
-                  _buildAlbumSelector(controller),
+                if (controller.albums.isNotEmpty) _buildAlbumSelector(controller),
                 // 媒体网格
                 Expanded(
                   child: _buildMediaGrid(controller, scrollController),
@@ -322,10 +314,7 @@ class MediaGrid extends StatelessWidget {
                             Text(
                               album.isAll ? '全部' : album.name,
                               style: TextStyle(
-                                color: controller.selectedAlbum.value?.id ==
-                                        album.id
-                                    ? Colors.white
-                                    : Colors.black,
+                                color: controller.selectedAlbum.value?.id == album.id ? Colors.white : Colors.black,
                               ),
                             ),
                             if (snapshot.hasData) ...[
@@ -333,10 +322,8 @@ class MediaGrid extends StatelessWidget {
                               Text(
                                 snapshot.data.toString(),
                                 style: TextStyle(
-                                  color: controller.selectedAlbum.value?.id ==
-                                          album.id
-                                      ? Colors.white70
-                                      : Colors.black54,
+                                  color:
+                                      controller.selectedAlbum.value?.id == album.id ? Colors.white70 : Colors.black54,
                                 ),
                               ),
                             ],
@@ -351,8 +338,7 @@ class MediaGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildMediaGrid(
-      MediaGridController controller, ScrollController scrollController) {
+  Widget _buildMediaGrid(MediaGridController controller, ScrollController scrollController) {
     return Obx(() {
       if (controller.isInitializing.value) {
         return const Center(child: CircularProgressIndicator());
@@ -383,6 +369,8 @@ class MediaGrid extends StatelessWidget {
               return CustomScrollView(
                 controller: scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
+                cacheExtent: 300, // 增加缓存范围以提高滚动性能
+                shrinkWrap: false,
                 slivers: [
                   // 添加一个固定的背景色sliver
                   SliverToBoxAdapter(
@@ -392,6 +380,7 @@ class MediaGrid extends StatelessWidget {
                     ),
                   ),
                   ...grouped.entries.map((entry) => SliverMediaGroup(
+                        key: ValueKey(entry.key), // 添加唯一键以提高渲染性能
                         month: entry.key,
                         files: entry.value,
                         onTapItem: (index) => controller.showPreview(
@@ -458,12 +447,16 @@ class SliverMediaGroup extends StatelessWidget {
               mainAxisSpacing: 2,
             ),
             itemCount: files.length,
-            itemBuilder: (context, index) => MediaGridItem(
-              file: files[index],
-              onSync: () =>
-                  Get.find<MediaGridController>().addFile(files[index]),
-              onTap: () => onTapItem(index),
-            ),
+            cacheExtent: 200, // 增加缓存范围以提高滚动性能
+            itemBuilder: (context, index) => FutureBuilder<Uint8List?>(
+                future: files[index].thumbnail,
+                builder: (context, snapshot) => MediaGridItem(
+                      key: ValueKey(files[index].path), // 添加唯一键以提高渲染性能
+                      file: files[index],
+                      thumb: snapshot.data,
+                      onSync: () => Get.find<MediaGridController>().addFile(files[index]),
+                      onTap: () => onTapItem(index),
+                    )),
           ),
         ],
       ),

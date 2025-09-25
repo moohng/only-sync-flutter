@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:photo_manager/photo_manager.dart';
 import 'package:sqflite/sqflite.dart';
@@ -17,7 +18,7 @@ class MediaDRO {
   final SyncStatus syncStatus;
   final String? syncError;
   final String? remotePath;
-  final String? thumbnailPath;
+  // final String? thumbnailPath;
 
   MediaDRO({
     required this.path,
@@ -29,10 +30,10 @@ class MediaDRO {
     required this.syncStatus,
     this.syncError,
     this.remotePath,
-    this.thumbnailPath,
+    // this.thumbnailPath,
   });
 
-  toAssetEntityImageInfo({required AssetEntity asset}) {
+  toAssetEntityImageInfo({required AssetEntity asset, required Future<Uint8List?> thumbnail}) {
     return AssetEntityImageInfo(
       asset: asset,
       path: path,
@@ -44,7 +45,8 @@ class MediaDRO {
       syncStatus: syncStatus,
       syncError: syncError,
       remotePath: remotePath,
-      thumbnailPath: thumbnailPath,
+      thumbnail: thumbnail,
+      // thumbnailPath: thumbnailPath,
     );
   }
 
@@ -59,7 +61,7 @@ class MediaDRO {
       syncStatus: SyncStatus.values[map['sync_status'] as int],
       syncError: map['sync_error'] as String?,
       remotePath: map['remote_path'] as String?,
-      thumbnailPath: map['thumbnail_path'] as String?,
+      // thumbnailPath: map['thumbnail_path'] as String?,
     );
   }
 }
@@ -81,7 +83,7 @@ class MediaDao {
       'sync_status': file.syncStatus.index,
       'sync_error': file.syncError,
       'remote_path': file.remotePath,
-      'thumbnail_path': file.thumbnailPath,
+      // 'thumbnail_path': file.thumbnailPath,
       'account_id': accountId,
       'last_sync_time': DateTime.now().millisecondsSinceEpoch,
     };
@@ -130,7 +132,7 @@ class MediaDao {
       syncStatus: SyncStatus.values[maps.first['sync_status'] as int],
       syncError: maps.first['sync_error'] as String?,
       remotePath: maps.first['remote_path'] as String?,
-      thumbnailPath: maps.first['thumbnail_path'] as String?,
+      // thumbnailPath: maps.first['thumbnail_path'] as String?,
     );
   }
 

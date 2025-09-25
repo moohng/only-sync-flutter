@@ -1,11 +1,10 @@
 import 'dart:developer';
-import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:only_sync_flutter/core/database/media_dao.dart';
-import 'package:only_sync_flutter/core/media/thumbnail_cache.dart';
+import 'package:only_sync_flutter/core/media/lru_thumb_cache.dart';
 import 'package:only_sync_flutter/core/store/sync_status_store.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../storage/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,7 +27,7 @@ class AssetEntityImageInfo {
   final SyncStatus syncStatus;
   final String? syncError;
   final String? remotePath;
-  final String? thumbnailPath;
+  final Future<Uint8List?> thumbnail;
 
   AssetEntityImageInfo({
     required this.asset,
@@ -39,16 +38,15 @@ class AssetEntityImageInfo {
     required this.modifiedTime,
     required this.createdTime,
     required this.syncStatus,
+    required this.thumbnail,
     this.syncError,
     this.remotePath,
-    this.thumbnailPath,
   });
 
   AssetEntityImageInfo copyWith({
     SyncStatus? syncStatus,
     String? syncError,
     String? remotePath,
-    String? thumbnailPath,
   }) {
     return AssetEntityImageInfo(
       asset: asset,
@@ -58,10 +56,10 @@ class AssetEntityImageInfo {
       size: size,
       modifiedTime: modifiedTime,
       createdTime: createdTime,
+      thumbnail: thumbnail,
       syncStatus: syncStatus ?? this.syncStatus,
       syncError: syncError ?? this.syncError,
       remotePath: remotePath ?? this.remotePath,
-      thumbnailPath: thumbnailPath ?? this.thumbnailPath,
     );
   }
 }
@@ -72,8 +70,8 @@ class MediaManager {
   final SyncStatusStore _syncStore = SyncStatusStore();
   RemoteStorageService? _storageService;
   bool _hasPermission = false;
-  final _syncCheckQueue = <String, AssetEntityImageInfo>{};
-  bool _isCheckingSync = false;
+
+  final thumbCache = LruThumbCache(capacity: 300);
 
   MediaManager({RemoteStorageService? storageService}) : _storageService = storageService;
 
@@ -88,20 +86,7 @@ class MediaManager {
     }
   }
 
-  /// 缩略图缓存目录
-  late final Directory _thumbnailCacheDir;
-
-  final _thumbnailCache = ThumbnailCache();
-  static const thumbnailSize = ThumbnailSize(300, 300);
-
-  /// 初始化缩略图缓存目录
   Future<void> init() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    _thumbnailCacheDir = Directory('${appDir.path}/thumbnails');
-    if (!await _thumbnailCacheDir.exists()) {
-      await _thumbnailCacheDir.create(recursive: true);
-    }
-    await _thumbnailCache.init();
     final prefs = await SharedPreferences.getInstance();
     final activeId = prefs.getString('activeAccount');
     await _syncStore.init(activeId);
@@ -124,26 +109,6 @@ class MediaManager {
       type: RequestType.common,
       hasAll: true,
     );
-  }
-
-  Future<String?> _generateAndCacheThumbnail(AssetEntity asset) async {
-    // 先检查缓存
-    final cachedPath = await _thumbnailCache.getThumbnailPath(asset.id, thumbnailSize.width, thumbnailSize.height);
-
-    if (cachedPath != null) {
-      return cachedPath;
-    }
-
-    // 生成新的缩略图
-    final thumbnailBytes = await asset.thumbnailDataWithSize(
-      thumbnailSize,
-      quality: 95,
-    );
-
-    if (thumbnailBytes == null) return null;
-
-    // 保存到缓存
-    return _thumbnailCache.saveThumbnail(asset.id, thumbnailBytes, thumbnailSize.width, thumbnailSize.height);
   }
 
   /// 获取媒体文件
@@ -178,7 +143,8 @@ class MediaManager {
         final file = await asset.file;
 
         if (cachedInfoMap.containsKey(path)) {
-          mediaFiles.add(cachedInfoMap[path]!.toAssetEntityImageInfo(asset: asset));
+          mediaFiles
+              .add(cachedInfoMap[path]!.toAssetEntityImageInfo(asset: asset, thumbnail: thumbCache.getThumb(asset)));
           continue;
         }
 
@@ -192,17 +158,10 @@ class MediaManager {
           createdTime: asset.createDateTime,
           syncStatus: SyncStatus.notSynced,
           remotePath: null,
-          thumbnailPath: null,
+          thumbnail: thumbCache.getThumb(asset),
         );
 
         mediaFiles.add(mediaFile);
-
-        // 添加到缩略图生成队列
-        if (mediaFile.type == MediaType.image && mediaFile.thumbnailPath == null) {
-          addToThumbnailQueue(mediaFile);
-        }
-        // 添加到同步检查队列
-        // _queueSyncCheck(mediaFile);
       }
 
       // 批量保存新记录
@@ -212,55 +171,11 @@ class MediaManager {
             .map((f) => _mediaDao.insertOrUpdate(f, _storageService?.id)));
       }
 
-      // 开始后台处理
-      // _startSyncCheck();
-      _startThumbnailGeneration();
-
       return mediaFiles;
     } catch (e) {
       log('获取媒体文件失败: $e');
       return [];
     }
-  }
-
-  void _queueSyncCheck(AssetEntityImageInfo file) {
-    _syncCheckQueue[file.path] = file;
-  }
-
-  Future<void> _startSyncCheck() async {
-    if (_isCheckingSync || _syncCheckQueue.isEmpty || _storageService == null) return;
-
-    _isCheckingSync = true;
-    while (_syncCheckQueue.isNotEmpty) {
-      try {
-        final entry = _syncCheckQueue.entries.first;
-        final file = entry.value;
-
-        // 构建远程路径
-        final dateStr = DateFormat('yyyy/MM').format(file.modifiedTime);
-        final remotePath = '$dateStr/${file.name}';
-
-        final exists = await _storageService!.checkFileExists(remotePath);
-        if (exists) {
-          // 通知UI更新
-          onSyncStatusChanged?.call(file.copyWith(
-            syncStatus: SyncStatus.synced,
-            remotePath: remotePath,
-          ));
-        }
-
-        _syncCheckQueue.remove(entry.key);
-        // 添加小延迟避免过度占用资源
-        await Future.delayed(const Duration(milliseconds: 100));
-      } catch (e) {
-        log('检查同步状态失败: $e');
-        // 出错时也要移除，避免卡住队列
-        if (_syncCheckQueue.isNotEmpty) {
-          _syncCheckQueue.remove(_syncCheckQueue.keys.first);
-        }
-      }
-    }
-    _isCheckingSync = false;
   }
 
   // 添加状态变化回调
@@ -306,9 +221,7 @@ class MediaManager {
   }
 
   final _syncQueue = <String, AssetEntityImageInfo>{};
-  final _thumbnailQueue = <String, AssetEntityImageInfo>{};
   bool _isSyncing = false;
-  bool _isGeneratingThumbnails = false;
 
   // 启动后台同步
   Future<void> _startBackgroundSync() async {
@@ -343,61 +256,6 @@ class MediaManager {
       }
     }
     _isSyncing = false;
-  }
-
-  // 生成缩略图
-  Future<void> _startThumbnailGeneration() async {
-    if (_isGeneratingThumbnails || _thumbnailQueue.isEmpty) return;
-
-    _isGeneratingThumbnails = true;
-    while (_thumbnailQueue.isNotEmpty) {
-      try {
-        final entry = _thumbnailQueue.entries.first;
-        final file = entry.value;
-
-        final thumbnailFile = await _generateThumbnail(file);
-        if (thumbnailFile != null) {
-          await _mediaDao.updateThumbnailPath(file.path, thumbnailFile.path);
-          onSyncStatusChanged?.call(file.copyWith(thumbnailPath: thumbnailFile.path));
-        }
-
-        _thumbnailQueue.remove(entry.key);
-        await Future.delayed(const Duration(milliseconds: 50));
-      } catch (e) {
-        log('生成缩略图失败: $e');
-        if (_thumbnailQueue.isNotEmpty) {
-          _thumbnailQueue.remove(_thumbnailQueue.keys.first);
-        }
-      }
-    }
-    _isGeneratingThumbnails = false;
-  }
-
-  // 生成单个缩略图
-  Future<File?> _generateThumbnail(AssetEntityImageInfo file) async {
-    try {
-      final thumbnailBytes = await file.asset.thumbnailDataWithSize(
-        thumbnailSize,
-        quality: 95,
-      );
-
-      if (thumbnailBytes == null) return null;
-
-      final thumbnailPath = '${_thumbnailCacheDir.path}/${file.name}';
-      final thumbnailFile = File(thumbnailPath);
-      await thumbnailFile.writeAsBytes(thumbnailBytes);
-
-      return thumbnailFile;
-    } catch (e) {
-      log('生成缩略图失败: $e');
-      return null;
-    }
-  }
-
-  // 添加到缩略图生成队列
-  void addToThumbnailQueue(AssetEntityImageInfo file) {
-    _thumbnailQueue[file.path] = file;
-    _startThumbnailGeneration();
   }
 
   Future<void> addToSyncQueue(AssetEntityImageInfo file) async {
