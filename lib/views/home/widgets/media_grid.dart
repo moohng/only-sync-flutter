@@ -22,7 +22,8 @@ class AlbumState {
   });
 }
 
-class MediaGridController extends GetxController with GetTickerProviderStateMixin {
+class MediaGridController extends GetxController
+    with GetTickerProviderStateMixin {
   static const int pageSize = 30;
 
   final mediaFiles = <AssetEntityImageInfo>[].obs;
@@ -78,7 +79,8 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
     super.onClose();
   }
 
-  void updateStorageService(RemoteStorageService? service, {bool isAvailable = true}) {
+  void updateStorageService(RemoteStorageService? service,
+      {bool isAvailable = true}) {
     _mediaManager.updateStorageService(service);
     isServiceAvailable.value = isAvailable;
   }
@@ -106,7 +108,10 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
   }
 
   Future<void> loadNextBatch() async {
-    if (isLoading.value || isLoadingMore.value || !hasMore.value || selectedAlbum.value == null) return;
+    if (isLoading.value ||
+        isLoadingMore.value ||
+        !hasMore.value ||
+        selectedAlbum.value == null) return;
     isLoadingMore.value = true;
 
     try {
@@ -165,7 +170,8 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
 
   /// 将当前相册所有未同步的文件添加到同步队列
   Future<void> addSelectAlbumFiles() async {
-    final albumFiles = await _mediaManager.getMediaFiles(album: selectedAlbum.value!);
+    final albumFiles =
+        await _mediaManager.getMediaFiles(album: selectedAlbum.value!);
     for (final file in albumFiles) {
       // 添加到后台同步队列
       if (file.syncStatus != SyncStatus.synced) {
@@ -184,7 +190,8 @@ class MediaGridController extends GetxController with GetTickerProviderStateMixi
       }
       grouped[month]!.add(file);
     }
-    return Map.fromEntries(grouped.entries.toList()..sort((a, b) => b.key.compareTo(a.key)));
+    return Map.fromEntries(
+        grouped.entries.toList()..sort((a, b) => b.key.compareTo(a.key)));
   }
 
   void showPreview(List<AssetEntityImageInfo> files, int initialIndex) {
@@ -246,7 +253,8 @@ class MediaGrid extends StatelessWidget {
 
     // 添加滚动监听
     scrollController.addListener(() {
-      if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 500) {
+      if (scrollController.position.pixels >=
+          scrollController.position.maxScrollExtent - 500) {
         controller.loadNextBatch();
       }
     });
@@ -257,7 +265,8 @@ class MediaGrid extends StatelessWidget {
         return Obx(() => Column(
               children: [
                 // 相册选择器
-                if (controller.albums.isNotEmpty) _buildAlbumSelector(controller),
+                if (controller.albums.isNotEmpty)
+                  _buildAlbumSelector(controller),
                 // 媒体网格
                 Expanded(
                   child: _buildMediaGrid(controller, scrollController),
@@ -313,7 +322,10 @@ class MediaGrid extends StatelessWidget {
                             Text(
                               album.isAll ? '全部' : album.name,
                               style: TextStyle(
-                                color: controller.selectedAlbum.value?.id == album.id ? Colors.white : Colors.black,
+                                color: controller.selectedAlbum.value?.id ==
+                                        album.id
+                                    ? Colors.white
+                                    : Colors.black,
                               ),
                             ),
                             if (snapshot.hasData) ...[
@@ -321,8 +333,10 @@ class MediaGrid extends StatelessWidget {
                               Text(
                                 snapshot.data.toString(),
                                 style: TextStyle(
-                                  color:
-                                      controller.selectedAlbum.value?.id == album.id ? Colors.white70 : Colors.black54,
+                                  color: controller.selectedAlbum.value?.id ==
+                                          album.id
+                                      ? Colors.white70
+                                      : Colors.black54,
                                 ),
                               ),
                             ],
@@ -337,56 +351,69 @@ class MediaGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildMediaGrid(MediaGridController controller, ScrollController scrollController) {
+  Widget _buildMediaGrid(
+      MediaGridController controller, ScrollController scrollController) {
     return Obx(() {
       if (controller.isInitializing.value) {
         return const Center(child: CircularProgressIndicator());
       }
 
       final grouped = controller.groupedMediaFiles;
+      final backgroundColor = Theme.of(Get.context!).scaffoldBackgroundColor;
 
       // 添加一个额外的容器来确保有足够的滚动空间
-      return RefreshIndicator(
-        onRefresh: controller.refresh,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (grouped.isEmpty && !controller.isFirstLoad.value) {
-              return SingleChildScrollView(
-                // 确保内容至少有一个屏幕高，这样才能下拉刷新
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: const Center(child: Text('暂无媒体文件'))),
-              );
-            }
-            return CustomScrollView(
-              controller: scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                ...grouped.entries.map((entry) => SliverMediaGroup(
-                      month: entry.key,
-                      files: entry.value,
-                      onTapItem: (index) => controller.showPreview(
-                        entry.value,
-                        index,
+      return Container(
+        color: backgroundColor,
+        child: RefreshIndicator(
+          onRefresh: controller.refresh,
+          backgroundColor: backgroundColor,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (grouped.isEmpty && !controller.isFirstLoad.value) {
+                return SingleChildScrollView(
+                  // 确保内容至少有一个屏幕高，这样才能下拉刷新
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
                       ),
-                    )),
-                if (controller.hasMore.value && !controller.isFirstLoad.value)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: const Center(child: Text('暂无媒体文件'))),
+                );
+              }
+              return CustomScrollView(
+                controller: scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // 添加一个固定的背景色sliver
+                  SliverToBoxAdapter(
+                    child: Container(
+                      color: backgroundColor,
+                      height: 0,
                     ),
                   ),
-                // 添加底部间距
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 16),
-                ),
-              ],
-            );
-          },
+                  ...grouped.entries.map((entry) => SliverMediaGroup(
+                        month: entry.key,
+                        files: entry.value,
+                        onTapItem: (index) => controller.showPreview(
+                          entry.value,
+                          index,
+                        ),
+                      )),
+                  if (controller.hasMore.value && !controller.isFirstLoad.value)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ),
+                  // 添加底部间距
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 16),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       );
     });
@@ -433,7 +460,8 @@ class SliverMediaGroup extends StatelessWidget {
             itemCount: files.length,
             itemBuilder: (context, index) => MediaGridItem(
               file: files[index],
-              onSync: () => Get.find<MediaGridController>().addFile(files[index]),
+              onSync: () =>
+                  Get.find<MediaGridController>().addFile(files[index]),
               onTap: () => onTapItem(index),
             ),
           ),

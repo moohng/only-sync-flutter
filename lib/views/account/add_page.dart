@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:extended_image/extended_image.dart';
 import 'package:only_sync_flutter/routes/route.dart';
 import 'package:only_sync_flutter/utils/encryption_util.dart';
 import 'package:uuid/uuid.dart';
@@ -58,33 +57,87 @@ class AddAccountLogic extends GetxController {
     if (!formKey.currentState!.validate()) return;
 
     final qrData = generateAccountQRData();
+    final theme = Theme.of(context);
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('账户二维码'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('扫描此二维码可自动添加账户'),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: QrImageView(
-                data: qrData,
-                version: QrVersions.auto,
-                size: 200.0,
-              ),
-            ),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
+        elevation: 8,
+        backgroundColor: theme.cardColor,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题和关闭按钮
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '账户二维码',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.textTheme.headlineSmall?.color,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: theme.iconTheme.color,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // 描述文本
+              Text(
+                '扫描此二维码可自动添加账户',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.textTheme.bodyMedium?.color,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // 二维码容器
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: QrImageView(
+                  data: qrData,
+                  version: QrVersions.auto,
+                  size: 240.0,
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // 底部提示
+              Text(
+                '请确保此二维码仅在安全环境中使用',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -132,7 +185,9 @@ class AddAccountLogic extends GetxController {
         // 添加新账户
         accounts.add(jsonEncode(accountMap));
         await prefs.setStringList('accounts', accounts);
-        final homeLogic = !Get.isRegistered<HomeLogic>() ? Get.put(HomeLogic()) : Get.find<HomeLogic>();
+        final homeLogic = !Get.isRegistered<HomeLogic>()
+            ? Get.put(HomeLogic())
+            : Get.find<HomeLogic>();
         await homeLogic.switchStorageService(accountMap);
       }
       Get.back();
@@ -141,40 +196,6 @@ class AddAccountLogic extends GetxController {
       Get.snackbar('错误', '保存失败：$e');
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  Future<void> deleteAccount() async {
-    if (editingId == null) return;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final accounts = prefs.getStringList('accounts') ?? [];
-
-      // 从列表中移除账户
-      final newAccounts = accounts.where((json) {
-        final acc = jsonDecode(json);
-        return acc['id'] != editingId && acc['url'] != editingId;
-      }).toList();
-
-      await prefs.setStringList('accounts', newAccounts);
-
-      // 如果删除的是当前活跃账户，切换到第一个账户
-      final activeId = prefs.getString('activeAccount');
-      if (editingId == activeId) {
-        if (newAccounts.isNotEmpty) {
-          final firstAcc = jsonDecode(newAccounts.first);
-          await prefs.setString('activeAccount', firstAcc['id']);
-          await Get.find<HomeLogic>().switchStorageService(firstAcc);
-        } else {
-          await prefs.remove('activeAccount');
-        }
-      }
-
-      Get.back();
-      Get.snackbar('成功', '账户已删除');
-    } catch (e) {
-      Get.snackbar('错误', '删除失败：$e');
     }
   }
 
@@ -203,7 +224,8 @@ class AddAccountLogic extends GetxController {
         urlController.text = args['url'] ?? '';
         usernameController.text = args['username'] ?? '';
         // 解密密码
-        final decryptedPassword = EncryptionUtil.decrypt(args['password'] ?? '');
+        final decryptedPassword =
+            EncryptionUtil.decrypt(args['password'] ?? '');
         passwordController.text = decryptedPassword;
         pathController.text = args['path'] ?? '';
       } else {
@@ -220,7 +242,8 @@ class AddAccountLogic extends GetxController {
         urlController.text = account['url'] ?? '';
         usernameController.text = account['username'] ?? '';
         // 解密密码
-        final decryptedPassword = EncryptionUtil.decrypt(account['password'] ?? '');
+        final decryptedPassword =
+            EncryptionUtil.decrypt(account['password'] ?? '');
         passwordController.text = decryptedPassword;
         pathController.text = account['path'] ?? '';
       }
@@ -295,6 +318,7 @@ class AddAccountPage extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
+        surfaceTintColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         toolbarHeight: 64,
         leading: IconButton(
@@ -318,13 +342,16 @@ class AddAccountPage extends StatelessWidget {
               try {
                 dynamic scanResult = await Get.toNamed(Routes.scanPage);
                 // 回填入表单
-                if (scanResult != null && scanResult is String && scanResult.isNotEmpty) {
+                if (scanResult != null &&
+                    scanResult is String &&
+                    scanResult.isNotEmpty) {
                   log('扫码返回参数：$scanResult');
                   final scanInfo = jsonDecode(scanResult);
                   logic.urlController.text = scanInfo['url'] ?? '';
                   logic.usernameController.text = scanInfo['username'] ?? '';
                   // 解密密码
-                  final decryptedPassword = EncryptionUtil.decrypt(scanInfo['password'] ?? '');
+                  final decryptedPassword =
+                      EncryptionUtil.decrypt(scanInfo['password'] ?? '');
                   logic.passwordController.text = decryptedPassword;
                 }
               } catch (e) {
@@ -333,10 +360,6 @@ class AddAccountPage extends StatelessWidget {
               }
             },
             icon: Icon(Icons.camera_alt_outlined, color: theme.primaryColor),
-          ),
-          IconButton(
-            onPressed: () => logic.showQRCode(context),
-            icon: Icon(Icons.grid_view_rounded, color: theme.primaryColor),
           ),
         ],
       ),
@@ -362,6 +385,12 @@ class AddAccountPage extends StatelessWidget {
                     label: '测试连接',
                     color: theme.primaryColor,
                     onPressed: logic.testConnection,
+                  ),
+                  const SizedBox(height: 16),
+                  _ActionButton(
+                    label: '显示二维码',
+                    color: Colors.blue.shade600,
+                    onPressed: () => logic.showQRCode(context),
                   ),
                   const SizedBox(height: 16),
                   _ActionButton(
@@ -431,9 +460,12 @@ class _FormField extends StatelessWidget {
               color: theme.hintColor,
               fontSize: 14,
             ),
-            border: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
-            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.primaryColor)),
+            border: OutlineInputBorder(
+                borderSide: BorderSide(color: theme.dividerColor)),
+            enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: theme.dividerColor)),
+            focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: theme.primaryColor)),
             contentPadding: const EdgeInsets.all(8),
           ),
           validator: config.validator,
@@ -487,7 +519,7 @@ class _TipCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.secondary.withOpacity(0.1),
+        color: theme.colorScheme.secondary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -501,7 +533,7 @@ class _TipCard extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '请确保您的 WebDAV 服务器支持 HTTPS 连接，并且服务器证书有效。建议使用强密码保护您的账户安全。',
+              '请确保您的 WebDAV 服务器支持 HTTPS 连接，并且服务器证书有效；建议使用强密码保护您的账户安全。',
               style: TextStyle(
                 fontSize: 14,
                 height: 1.25,
