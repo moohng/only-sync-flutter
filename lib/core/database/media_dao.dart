@@ -12,13 +12,11 @@ class MediaDRO {
   final SyncStatus syncStatus;
   final String? syncError;
   final String? remotePath;
-  // final String? thumbnailPath;
 
   MediaDRO({
     required this.syncStatus,
     this.syncError,
     this.remotePath,
-    // this.thumbnailPath,
   });
 
   toAssetEntityImageInfo({required AssetEntity asset, required Future<Uint8List?> thumbnail}) {
@@ -28,7 +26,6 @@ class MediaDRO {
       syncError: syncError,
       remotePath: remotePath,
       thumbnail: thumbnail,
-      // thumbnailPath: thumbnailPath,
     );
   }
 
@@ -68,9 +65,9 @@ class MediaDao {
     return id;
   }
 
-  Future<MediaDRO?> getFileInfo(String path, String? accountId) async {
+  Future<MediaDRO?> getFileInfo(String id, String? accountId) async {
     final db = await dbHelper.database;
-    log('查询参数 - path: $path, accountId: $accountId');
+    log('查询参数 - id: $id, accountId: $accountId');
 
     // 先查询所有数据，看看数据库中是否有数据
     final allData = await db.query(mediaFilesTable);
@@ -78,11 +75,11 @@ class MediaDao {
 
     final List<Map<String, dynamic>> maps = await db.query(
       mediaFilesTable,
-      where: accountId == null ? 'path = ? AND account_id IS NULL' : 'path = ? AND account_id = ?',
-      whereArgs: accountId == null ? [path] : [path, accountId],
+      where: accountId == null ? 'id = ? AND account_id IS NULL' : 'id = ? AND account_id = ?',
+      whereArgs: accountId == null ? [id] : [id, accountId],
     );
 
-    log('查询SQL: SELECT * FROM $mediaFilesTable WHERE path = "$path" AND account_id = "$accountId"');
+    log('查询SQL: SELECT * FROM $mediaFilesTable WHERE id = "$id" AND account_id = "$accountId"');
     log('查询结果: ${maps.length}条');
     if (!maps.isEmpty) {
       log('首条数据: ${maps.first}');

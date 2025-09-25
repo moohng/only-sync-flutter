@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:only_sync_flutter/routes/route.dart';
+import 'package:only_sync_flutter/utils/common_util.dart';
 import 'package:only_sync_flutter/utils/encryption_util.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,6 +23,8 @@ class AddAccountLogic extends GetxController {
 
   final isEditMode = false.obs;
   String? editingId;
+
+  String defaultRemoteBasePath = '';
 
   Future<void> testConnection() async {
     if (!formKey.currentState!.validate()) return;
@@ -185,9 +188,7 @@ class AddAccountLogic extends GetxController {
         // 添加新账户
         accounts.add(jsonEncode(accountMap));
         await prefs.setStringList('accounts', accounts);
-        final homeLogic = !Get.isRegistered<HomeLogic>()
-            ? Get.put(HomeLogic())
-            : Get.find<HomeLogic>();
+        final homeLogic = !Get.isRegistered<HomeLogic>() ? Get.put(HomeLogic()) : Get.find<HomeLogic>();
         await homeLogic.switchStorageService(accountMap);
       }
       Get.back();
@@ -216,6 +217,9 @@ class AddAccountLogic extends GetxController {
 
   @override
   void onInit() async {
+    // 先初始化默认远程路径
+    defaultRemoteBasePath = '/${await CommonUtil.getDeviceName()}';
+
     // 检查是否传入了账户信息用于编辑或从二维码填充
     final args = Get.arguments;
     if (args != null && args is Map<String, dynamic>) {
@@ -224,8 +228,7 @@ class AddAccountLogic extends GetxController {
         urlController.text = args['url'] ?? '';
         usernameController.text = args['username'] ?? '';
         // 解密密码
-        final decryptedPassword =
-            EncryptionUtil.decrypt(args['password'] ?? '');
+        final decryptedPassword = EncryptionUtil.decrypt(args['password'] ?? '');
         passwordController.text = decryptedPassword;
         pathController.text = args['path'] ?? '';
       } else {
@@ -242,12 +245,17 @@ class AddAccountLogic extends GetxController {
         urlController.text = account['url'] ?? '';
         usernameController.text = account['username'] ?? '';
         // 解密密码
-        final decryptedPassword =
-            EncryptionUtil.decrypt(account['password'] ?? '');
+        final decryptedPassword = EncryptionUtil.decrypt(account['password'] ?? '');
         passwordController.text = decryptedPassword;
         pathController.text = account['path'] ?? '';
       }
     }
+
+    // 如果路径控制器为空，则设置为默认值
+    if (pathController.text.isEmpty) {
+      pathController.text = defaultRemoteBasePath;
+    }
+
     super.onInit();
   }
 
@@ -309,7 +317,7 @@ class AddAccountPage extends StatelessWidget {
       ),
       FormFieldConfig(
         label: '同步目录',
-        hint: '/photos',
+        hint: logic.defaultRemoteBasePath,
         controller: logic.pathController,
       ),
     ];
@@ -342,16 +350,13 @@ class AddAccountPage extends StatelessWidget {
               try {
                 dynamic scanResult = await Get.toNamed(Routes.scanPage);
                 // 回填入表单
-                if (scanResult != null &&
-                    scanResult is String &&
-                    scanResult.isNotEmpty) {
+                if (scanResult != null && scanResult is String && scanResult.isNotEmpty) {
                   log('扫码返回参数：$scanResult');
                   final scanInfo = jsonDecode(scanResult);
                   logic.urlController.text = scanInfo['url'] ?? '';
                   logic.usernameController.text = scanInfo['username'] ?? '';
                   // 解密密码
-                  final decryptedPassword =
-                      EncryptionUtil.decrypt(scanInfo['password'] ?? '');
+                  final decryptedPassword = EncryptionUtil.decrypt(scanInfo['password'] ?? '');
                   logic.passwordController.text = decryptedPassword;
                 }
               } catch (e) {
@@ -460,12 +465,9 @@ class _FormField extends StatelessWidget {
               color: theme.hintColor,
               fontSize: 14,
             ),
-            border: OutlineInputBorder(
-                borderSide: BorderSide(color: theme.dividerColor)),
-            enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: theme.dividerColor)),
-            focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: theme.primaryColor)),
+            border: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.primaryColor)),
             contentPadding: const EdgeInsets.all(8),
           ),
           validator: config.validator,

@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'package:get/get_utils/src/platform/platform.dart';
+import 'package:only_sync_flutter/utils/common_util.dart';
 import 'package:webdav_client/webdav_client.dart' show newClient, Client;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 
 abstract class RemoteStorageService {
   late String? id;
@@ -40,23 +39,11 @@ class WebDAVService extends RemoteStorageService {
 
   void initRemoteBasePath(String? remoteBasePath) async {
     if (remoteBasePath == null || remoteBasePath.isEmpty) {
-      final deviceName = await _getDeviceName();
+      final deviceName = await CommonUtil.getDeviceName();
       this.remoteBasePath = '/$deviceName';
     } else {
       this.remoteBasePath = remoteBasePath;
     }
-  }
-
-  Future<String> _getDeviceName() async {
-    final deviceInfo = DeviceInfoPlugin();
-    if (GetPlatform.isAndroid) {
-      final androidInfo = await deviceInfo.androidInfo;
-      return androidInfo.model;
-    } else if (GetPlatform.isIOS) {
-      final iosInfo = await deviceInfo.iosInfo;
-      return iosInfo.name;
-    }
-    return 'Unknown Device';
   }
 
   @override

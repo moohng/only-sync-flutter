@@ -206,7 +206,7 @@ class MediaManager {
         onSyncStatusChanged?.call(imgInfo.copyWith(syncStatus: SyncStatus.syncing));
         final result = await syncFile(imgInfo);
         await _mediaDao.updateSyncStatus(
-          (await imgInfo.asset.file)!.path,
+          imgInfo.asset.id,
           result.syncStatus,
           result.syncError,
           result.remotePath,

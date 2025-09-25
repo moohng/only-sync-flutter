@@ -30,16 +30,9 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE media_files (
         id TEXT PRIMARY KEY,
-        path TEXT NOT NULL,
-        name TEXT NOT NULL,
-        type INTEGER NOT NULL,
-        size INTEGER NOT NULL,
-        modified_time INTEGER NOT NULL,
-        created_time INTEGER NOT NULL,
         sync_status INTEGER NOT NULL,
         sync_error TEXT,
         remote_path TEXT,
-        thumbnail_path TEXT,
         account_id TEXT,
         last_sync_time INTEGER
       )
@@ -47,7 +40,6 @@ class DatabaseHelper {
     log('数据库表创建完成');
 
     // 创建索引
-    await db.execute('CREATE INDEX idx_path ON media_files(path)');
     await db.execute('CREATE INDEX idx_account ON media_files(account_id)');
   }
 
